@@ -4,15 +4,14 @@ CivicClear backend: auth API for login and signup.
 import os
 import sys
 
-# Ensure backend directory is on path so imports work when run from any cwd
-# (e.g. "python app.py" from backend/ or "python backend/app.py" from project root)
+
 _backend_dir = os.path.dirname(os.path.abspath(__file__))
 if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 from flask import Flask, request, jsonify  # noqa: E402
-from flask_cors import CORS  # type: ignore[import-untyped] # noqa: E402
-from werkzeug.security import generate_password_hash, check_password_hash  # noqa: E402
+from flask_cors import CORS  
+from werkzeug.security import generate_password_hash, check_password_hash  
 
 from database import init_db, add_user, get_user_by_email  
 from models import validate_password, user_row_to_dict  
@@ -54,11 +53,11 @@ def signup():
     user = user_row_to_dict(row)
     return jsonify({
         "success": True,
-        "message": "Account created! Redirecting to login...",
+        "message": "Account created! Redirecting to login",
         "user": user,
     }), 201
 
-
+# This is like the JSON requests using get 
 @app.route("/api/login", methods=["POST"])
 def login():
     """
