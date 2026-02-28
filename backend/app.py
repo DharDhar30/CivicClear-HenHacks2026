@@ -14,8 +14,8 @@ from flask import Flask, request, jsonify  # noqa: E402
 from flask_cors import CORS  # type: ignore[import-untyped] # noqa: E402
 from werkzeug.security import generate_password_hash, check_password_hash  # noqa: E402
 
-from database import init_db, add_user, get_user_by_email  # noqa: E402
-from models import validate_password, user_row_to_dict  # noqa: E402
+from database import init_db, add_user, get_user_by_email  
+from models import validate_password, user_row_to_dict  
 
 app = Flask(__name__)
 CORS(app, origins=["*"])
