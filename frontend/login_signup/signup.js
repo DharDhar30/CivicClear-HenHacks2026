@@ -27,7 +27,7 @@ form.addEventListener("submit", function (event) {
 
   // prevent duplicate emails
   if (users.some(u => u.email === email)) {
-    message.textContent = "This email is already registered. Please login.";
+    message.textContent = "Account already exists.";
     return;
   }
 
