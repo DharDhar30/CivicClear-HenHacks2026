@@ -1,2 +1,70 @@
-localStorage.removeItem("civicclear_current_user");
-window.location.href = "login_signup/login.html";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CivicClear — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="login_signup/CivicClear-removebg-preview.png" class="logo" alt="CivicClear logo" />
+      <div class="brandText">
+        <h1>CivicClear</h1>
+        <p>Clear, structured civic guidance</p>
+      </div>
+    </div>
+
+    <div class="userArea">
+      <span id="welcomeText" class="welcome"></span>
+      <button id="logoutBtn" class="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="tabs" aria-label="Features">
+        <button class="tab active" data-tab="guidance">Text Guidance</button>
+        <button class="tab" data-tab="carbon">Carbon Tracker</button>
+        <button class="tab" data-tab="emergency">Emergency Route</button>
+        <button class="tab" data-tab="resources">Resources</button>
+        <button class="tab" data-tab="planner">Smart Planner</button>
+      </div>
+
+      <h2 id="panelTitle">Civic Text Guidance</h2>
+
+      <label class="label" for="userInput">Input</label>
+      <textarea id="userInput" rows="7" placeholder="Paste an alert, policy, or instructions..."></textarea>
+
+      <div class="actions">
+        <button id="exampleBtn" class="btn secondary">Example</button>
+        <button id="generateBtn" class="btn primary">Generate</button>
+        <button id="copyBtn" class="btn">Copy Output</button>
+      </div>
+
+      <div class="output">
+        <div class="riskRow">
+          <span class="riskLabel">Risk:</span>
+          <span id="riskBadge" class="badge low">Low</span>
+        </div>
+
+        <h3>Summary</h3>
+        <p id="summaryText" class="muted">Your result will appear here.</p>
+
+        <h3>Key Points</h3>
+        <ul id="keyPointsList"></ul>
+
+        <h3>Recommended Actions</h3>
+        <ol id="actionsList"></ol>
+
+        <h3>Accessible Version</h3>
+        <p id="accessibleText" class="muted"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
