@@ -34,7 +34,7 @@ form.addEventListener("submit", function (event) {
 
   // redirect to main page
   setTimeout(() => {
-    window.location.href = "index.html";
-  }, 800);
+  window.location.href = "../index.html";
+}, 800);
 
 });
