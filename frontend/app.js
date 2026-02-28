@@ -1,10 +1,8 @@
-// ===== Auth guard: block dashboard if not logged in =====
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) {
   window.location.href = "login_signup/login.html";
 }
 
-// ===== Welcome + Logout =====
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -12,7 +10,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
   window.location.href = "login_signup/login.html";
 });
 
-// ===== Tabs + Feature content =====
+
 const tabs = document.querySelectorAll(".tab");
 const panelTitle = document.getElementById("panelTitle");
 const userInput = document.getElementById("userInput");
@@ -90,7 +88,6 @@ function renderResult(result){
   accessibleText.textContent = result.accessible;
 }
 
-// Simple mock results (replace later with real AI API)
 function generateMockResult(input){
   const lowered = input.toLowerCase();
   let risk = "Low";
@@ -137,7 +134,6 @@ function generateMockResult(input){
     };
   }
 
-  // guidance default
   return {
     risk,
     summary: "This message contains important information. Here’s the simplified meaning and next steps.",
@@ -147,7 +143,6 @@ function generateMockResult(input){
   };
 }
 
-// Events
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
 exampleBtn.addEventListener("click", () => {
@@ -184,5 +179,4 @@ ${accessibleText.textContent}
   }
 });
 
-// Start
 setActiveTab("guidance");
