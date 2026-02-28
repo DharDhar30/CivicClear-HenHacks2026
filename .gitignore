@@ -1,0 +1,10 @@
+# Secrets
+.env
+server/.env
+
+# Node dependencies
+node_modules/
+server/node_modules/
+
+# OS junk
+.DS_Store

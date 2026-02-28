@@ -1,8 +1,13 @@
+// app.js (FULL) — Guidance tab uses Gemini via your Node proxy at http://localhost:5050/api/gemini
+// Other tabs keep your mock responses.
+
+// ===== Auth guard: block dashboard if not logged in =====
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) {
   window.location.href = "login_signup/login.html";
 }
 
+// ===== Welcome + Logout =====
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -10,7 +15,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
   window.location.href = "login_signup/login.html";
 });
 
-
+// ===== Tabs + Feature content =====
 const tabs = document.querySelectorAll(".tab");
 const panelTitle = document.getElementById("panelTitle");
 const userInput = document.getElementById("userInput");
@@ -27,7 +32,6 @@ const accessibleText = document.getElementById("accessibleText");
 
 let currentTab = "guidance";
 
-// ===== Tab titles =====
 const titles = {
   guidance: "Civic Text Guidance",
   carbon: "Personal Carbon Footprint Tracker",
@@ -36,10 +40,10 @@ const titles = {
   planner: "Smart Planner / Organizer"
 };
 
-// ===== Example inputs =====
+// ✅ Slightly improved demo example (location + flooding mention)
 const examples = {
   guidance:
-    "EMERGENCY ALERT: A severe thunderstorm warning is in effect until 8:30 PM. Winds may exceed 60 mph. Avoid windows and do not drive through flooded roads.",
+    "EMERGENCY ALERT: Severe thunderstorm warning for Newark, DE until 8:30 PM. Winds may exceed 60 mph. Heavy rain and flash flooding possible. Avoid windows and do not drive through flooded roads.",
   carbon:
     "Today I drove 18 miles, used AC for 6 hours, and ate beef once.",
   emergency:
@@ -50,17 +54,14 @@ const examples = {
     "Tasks: lab report due Friday, quiz Wednesday, work Thu 5–9, grocery run."
 };
 
-// ===== Risk badge UI =====
 function setRisk(level) {
   riskBadge.textContent = level;
   riskBadge.classList.remove("low", "med", "high");
-
   if (level === "Low") riskBadge.classList.add("low");
   if (level === "Medium") riskBadge.classList.add("med");
   if (level === "High") riskBadge.classList.add("high");
 }
 
-// ===== Clear output =====
 function clearOutput() {
   setRisk("Low");
   summaryText.textContent = "Your result will appear here.";
@@ -69,52 +70,41 @@ function clearOutput() {
   actionsList.innerHTML = "";
 }
 
-// ===== Switch tabs =====
 function setActiveTab(tabName) {
   currentTab = tabName;
-
-  tabs.forEach(tab =>
-    tab.classList.toggle("active", tab.dataset.tab === tabName)
-  );
-
+  tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
   panelTitle.textContent = titles[tabName];
   userInput.value = "";
   clearOutput();
 }
 
-// ===== Render result =====
 function renderResult(result) {
   setRisk(result.risk);
-
   summaryText.textContent = result.summary;
 
   keyPointsList.innerHTML = "";
-  result.keyPoints.forEach(point => {
+  (result.keyPoints || []).forEach(p => {
     const li = document.createElement("li");
-    li.textContent = point;
+    li.textContent = p;
     keyPointsList.appendChild(li);
   });
 
   actionsList.innerHTML = "";
-  result.actions.forEach(action => {
+  (result.actions || []).forEach(a => {
     const li = document.createElement("li");
-    li.textContent = action;
+    li.textContent = a;
     actionsList.appendChild(li);
   });
 
-  accessibleText.textContent = result.accessible;
+  accessibleText.textContent = result.accessible || "";
 }
 
-function generateMockResult(input){
-// ===== Gemini AI call for Civic Guidance =====
+// ===== Gemini (Guidance tab) =====
 async function generateGuidanceWithGemini(userText) {
-
   const prompt = `
 You are CivicClear, an AI civic assistant.
 
-Analyze the user's civic or emergency-related input.
-
-Return ONLY valid JSON in this exact format:
+Analyze the user's civic or emergency-related input and return ONLY valid JSON with EXACTLY these keys:
 
 {
   "risk": "Low" | "Medium" | "High",
@@ -125,208 +115,118 @@ Return ONLY valid JSON in this exact format:
 }
 
 Guidelines:
-
-- High risk = immediate danger (fire, evacuation, severe storm, violence, disaster)
-- Medium risk = urgent but not life-threatening (warnings, disruptions, health advisories)
-- Low risk = general civic information or routine notices
-
-Be accurate, clear, and helpful.
-Provide practical steps.
-If unclear, recommend checking official sources.
+- High risk = immediate danger (fire, evacuation, severe storm, violence, disaster).
+- Medium risk = urgent but not life-threatening (advisories, disruptions, time-sensitive notices).
+- Low risk = general civic info or routine announcements.
+- Provide practical, realistic steps and recommend official sources when relevant.
+- Keep keyPoints to 3–6 items and actions to 3–8 items.
+- Do NOT use Markdown. Do NOT wrap JSON in backticks. Output JSON only.
 
 User input:
-${userText}
+"""${userText}"""
 
 Return ONLY JSON.
-`;
+`.trim();
 
   const response = await fetch("http://localhost:5050/api/gemini", {
-
     method: "POST",
-
-    headers: {
-      "Content-Type": "application/json"
-    },
-
-    body: JSON.stringify({
-      prompt: prompt
-    })
-
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || "Gemini failed");
+    throw new Error(data.error || "Gemini request failed");
   }
 
+  // Robust JSON extraction (handles ```json fences or extra text)
   const raw = data.text || "";
+  const cleaned = raw
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
 
-// Remove Markdown code fences if Gemini adds them
-const cleaned = raw
-  .replace(/```json/gi, "")
-  .replace(/```/g, "")
-  .trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    throw new Error("AI did not return JSON. Raw: " + cleaned.slice(0, 140));
+  }
 
-// Extract the first JSON object from the text
-const start = cleaned.indexOf("{");
-const end = cleaned.lastIndexOf("}");
-
-if (start === -1 || end === -1) {
-  throw new Error("AI did not return JSON. Raw response: " + cleaned.slice(0, 120));
+  const jsonStr = cleaned.slice(start, end + 1);
+  return JSON.parse(jsonStr);
 }
 
-const jsonStr = cleaned.slice(start, end + 1);
-return JSON.parse(jsonStr);
-}
-}
-// ===== Mock results for other tabs =====
+// ===== Mock results for other tabs (and fallback) =====
 function generateMockResult(input) {
-
-  const lowered = input.toLowerCase();
-
+  const lowered = (input || "").toLowerCase();
   let risk = "Low";
-
-  if (
-    lowered.includes("warning") ||
-    lowered.includes("evac") ||
-    lowered.includes("flood") ||
-    lowered.includes("fire")
-  ) {
-    risk = "High";
-  }
-  else if (
-    lowered.includes("recommend") ||
-    lowered.includes("should")
-  ) {
-    risk = "Medium";
-  }
+  if (lowered.includes("warning") || lowered.includes("evac") || lowered.includes("flood") || lowered.includes("fire")) risk = "High";
+  else if (lowered.includes("recommend") || lowered.includes("should")) risk = "Medium";
 
   if (currentTab === "carbon") {
     return {
       risk: "Medium",
-      summary:
-        "Your estimated footprint today is moderate based on transportation and energy use.",
-      keyPoints: [
-        "Driving increases emissions",
-        "AC use increases electricity demand",
-        "Diet choices affect carbon impact"
-      ],
-      actions: [
-        "Reduce driving distance",
-        "Increase thermostat slightly",
-        "Reduce high-impact foods"
-      ],
-      accessible:
-        "Your carbon footprint today is moderate. Reducing driving and AC use can help."
+      summary: "Your estimated footprint today is moderate based on transportation and energy use.",
+      keyPoints: ["Driving increases emissions", "AC use increases electricity demand", "Diet choices can raise impact"],
+      actions: ["Combine trips or carpool once this week", "Raise thermostat 1–2°F when possible", "Swap one beef meal for beans/chicken"],
+      accessible: "Moderate footprint today. Biggest factors: driving and AC. Small changes can help."
     };
   }
 
   if (currentTab === "emergency") {
     return {
       risk: "High",
-      summary:
-        "Emergency conditions detected. Early preparation improves safety.",
-      keyPoints: [
-        "Conditions may worsen quickly",
-        "Evacuation may be necessary",
-        "Follow official alerts"
-      ],
-      actions: [
-        "Prepare emergency supplies",
-        "Identify evacuation routes",
-        "Monitor official instructions"
-      ],
-      accessible:
-        "Emergency detected. Prepare and follow official guidance."
+      summary: "Emergency conditions can become dangerous quickly. Prioritize early safety steps.",
+      keyPoints: ["Avoid driving through water", "Move essentials to higher ground", "Monitor official alerts"],
+      actions: ["Pack a go-bag (ID, meds, water, charger)", "Plan a route to higher ground/shelter", "Leave early if conditions worsen"],
+      accessible: "Emergency safety: avoid hazards, stay informed, and move to safety if needed."
     };
   }
 
   if (currentTab === "resources") {
     return {
       risk: "Medium",
-      summary:
-        "Support resources are available for your situation.",
-      keyPoints: [
-        "Local programs can help",
-        "Documentation may be required",
-        "Multiple assistance types exist"
-      ],
-      actions: [
-        "Contact local resource centers",
-        "Prepare documents",
-        "Apply for assistance programs"
-      ],
-      accessible:
-        "Help is available. Contact local services and prepare required documents."
+      summary: "Start with local referral services and gather documents for assistance applications.",
+      keyPoints: ["211 can connect you to local programs", "Rental help often requires proof of lease/income", "Food help may include pantries/SNAP"],
+      actions: ["Call 2-1-1 and ask for rent + food help", "Gather ID, lease, pay stubs, bills", "Apply for SNAP or find a nearby pantry"],
+      accessible: "You can get rent and food support. Start with 211 and prepare basic documents."
     };
   }
 
   if (currentTab === "planner") {
     return {
       risk: "Low",
-      summary:
-        "Tasks organized into a simple plan.",
-      keyPoints: [
-        "Prioritize urgent deadlines",
-        "Break work into smaller tasks",
-        "Schedule efficiently"
-      ],
-      actions: [
-        "Complete urgent tasks first",
-        "Schedule focused work sessions",
-        "Plan remaining tasks"
-      ],
-      accessible:
-        "Focus on urgent tasks first, then complete remaining tasks step by step."
+      summary: "Here’s a simple plan that matches deadlines and your schedule.",
+      keyPoints: ["Quiz prep comes first (Wednesday)", "Lab report needs 2 sessions", "Errands fit before your work shift"],
+      actions: ["Today: 60 min quiz study + outline report", "Tomorrow: finish quiz study + draft report", "Thursday: grocery run before work"],
+      accessible: "Study for the quiz first, then finish the report in two sessions. Do errands before work."
     };
   }
 
+  // guidance fallback
   return {
     risk,
-    summary:
-      "Information detected. Review and follow guidance.",
-    keyPoints: [
-      "Important information identified",
-      "Review carefully",
-      "Follow instructions"
-    ],
-    actions: [
-      "Read full message",
-      "Follow official guidance",
-      "Stay informed"
-    ],
-    accessible:
-      "Review information and follow instructions."
+    summary: "This message contains important information. Here’s the simplified meaning and next steps.",
+    keyPoints: ["Main message simplified", "Key details highlighted", "What to avoid and why"],
+    actions: ["Follow official instructions", "Prepare essentials and stay informed", "Avoid hazards mentioned in the alert"],
+    accessible: "Plain version: focus on the key steps, avoid risky actions, and check official updates."
   };
 }
 
+// ===== Events =====
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
-// ===== Tab click events =====
-tabs.forEach(tab =>
-  tab.addEventListener("click", () =>
-    setActiveTab(tab.dataset.tab)
-  )
-);
 
-// ===== Example button =====
 exampleBtn.addEventListener("click", () => {
   userInput.value = examples[currentTab];
 });
 
-// ===== Generate button =====
 generateBtn.addEventListener("click", async () => {
-
   const input = userInput.value.trim();
-
-  if (!input) {
-    alert("Please enter something first.");
-    return;
-  }
+  if (!input) return alert("Please enter something first.");
 
   try {
-
-    // loading state
+    // Loading state
     setRisk("Low");
     summaryText.textContent = "Generating AI response...";
     keyPointsList.innerHTML = "";
@@ -334,31 +234,21 @@ generateBtn.addEventListener("click", async () => {
     accessibleText.textContent = "";
 
     if (currentTab === "guidance") {
-
       const result = await generateGuidanceWithGemini(input);
-
       renderResult(result);
-
     } else {
-
       renderResult(generateMockResult(input));
-
     }
-
+  } catch (error) {
+    console.error("Gemini error:", error);
+    alert("AI failed: " + (error?.message || error));
+    renderResult(generateMockResult(input));
   }
-  catch (error) {
-  console.error("Gemini error:", error);
-  alert("AI failed: " + (error?.message || error));
-  renderResult(generateMockResult(input));
-}
-
 });
 
-// ===== Copy button =====
 copyBtn.addEventListener("click", async () => {
-
-  const text = `
-Risk: ${riskBadge.textContent}
+  const text =
+`Risk: ${riskBadge.textContent}
 
 Summary:
 ${summaryText.textContent}
@@ -366,7 +256,7 @@ ${summaryText.textContent}
 Key Points:
 - ${Array.from(keyPointsList.children).map(li => li.textContent).join("\n- ")}
 
-Actions:
+Recommended Actions:
 - ${Array.from(actionsList.children).map(li => li.textContent).join("\n- ")}
 
 Accessible Version:
@@ -376,11 +266,9 @@ ${accessibleText.textContent}
   try {
     await navigator.clipboard.writeText(text);
     alert("Copied!");
+  } catch {
+    alert("Copy failed in this browser.");
   }
-  catch {
-    alert("Copy failed.");
-  }
-
 });
 
 // ===== Start =====

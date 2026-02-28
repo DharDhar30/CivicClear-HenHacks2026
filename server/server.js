@@ -1,7 +1,7 @@
 // server/server.js
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import dotenv from "dotenv/lib/main";
 
 dotenv.config();
 
@@ -15,9 +15,9 @@ app.post("/api/gemini", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Missing prompt" });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "Missing GEMINI_API_KEY in .env" });
+    if (!apiKey) return res.status(500).json({ error: "Missing GEMINI_API_KEY in server/.env" });
 
-    // ✅ Use a model that YOUR key supports (from your ListModels output)
+    // ✅ Model confirmed available for your key (from ListModels)
     const model = "gemini-2.5-flash";
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
