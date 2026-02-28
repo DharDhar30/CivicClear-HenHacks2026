@@ -33,25 +33,38 @@ def init_db():
 
 def add_user(email: str, password_hash: str):
     """
-    Insert a new user. Returns user row (id, email, password_hash, created_at) or None if email exists.
+    Insert a new user.
+    Returns (id, email, password_hash, created_at)
     """
+
     conn = get_connection()
-    try:
-        cur = conn.execute(
-            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-            (email.strip().lower(), password_hash),
-        )
-        conn.commit()
-        row = conn.execute(
-            "SELECT id, email, password_hash, created_at FROM users WHERE id = ?",
-            (cur.lastrowid,),
-        ).fetchone()
-        return (row["id"], row["email"], row["password_hash"], row["created_at"]) if row else None
-    except sqlite3.IntegrityError:
-        conn.rollback()
+
+    cleaned_email = email.strip().lower()
+    cur = conn.execute(
+        "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+        (cleaned_email, password_hash)
+    )
+
+    conn.commit()
+
+    user_id = cur.lastrowid
+
+    row = conn.execute(
+        "SELECT id, email, password_hash, created_at FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+
+    conn.close()
+
+    if row is None:
         return None
-    finally:
-        conn.close()
+
+    return (
+        row["id"],
+        row["email"],
+        row["password_hash"],
+        row["created_at"]
+    )
 
 
 def get_user_by_email(email: str):
