@@ -44,7 +44,7 @@ def signup():
     if not valid:
         return jsonify({"success": False, "message": msg}), 400
 
-    password_hash = generate_password_hash(password, method="scrypt")
+    password_hash = generate_password_hash(password, method="pbkdf2:sha256")
     row = add_user(email, password_hash)
 
     if row is None:

@@ -1,5 +1,7 @@
-const currentUser = localStorage.getItem("civicclear_current_user");
+const API_BASE = "http://127.0.0.1:5001";
 
+// if already logged in, go to dashboard
+const currentUser = localStorage.getItem("civicclear_current_user");
 if (currentUser) {
   window.location.href = "../index.html";
 }
@@ -7,34 +9,43 @@ if (currentUser) {
 const form = document.getElementById("loginForm");
 const message = document.getElementById("message");
 
-form.addEventListener("submit", function (event) {
-
+form.addEventListener("submit", async function (event) {
   event.preventDefault();
 
   const email = document.getElementById("email").value.trim().toLowerCase();
   const password = document.getElementById("password").value;
 
-  // get users from signup
-  const users = JSON.parse(localStorage.getItem("civicclear_users") || "[]");
+  try {
+    const response = await fetch(`${API_BASE}/api/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password
+      })
+    });
 
-  // find matching user
-  const foundUser = users.find(user =>
-    user.email === email && user.password === password
-  );
+    const data = await response.json();
 
-  if (!foundUser) {
-    message.textContent = "Invalid email or password.";
-    return;
+    if (!response.ok) {
+      message.textContent = data.message;
+      return;
+    }
+
+    message.textContent = data.message;
+
+    // save login session
+    localStorage.setItem("civicclear_current_user", email);
+
+    // redirect to dashboard
+    setTimeout(() => {
+      window.location.href = "../index.html";
+    }, 800);
+
+  } catch (error) {
+    message.textContent = "Cannot connect to server.";
+    console.error(error);
   }
-
-  message.textContent = "Login successful!";
-
-  // save current logged-in user
-  localStorage.setItem("civicclear_current_user", email);
-
-  // redirect to main page
-  setTimeout(() => {
-  window.location.href = "../index.html";
-}, 800);
-
 });
