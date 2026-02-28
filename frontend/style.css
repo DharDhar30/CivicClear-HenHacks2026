@@ -1,0 +1,158 @@
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#0b1220;
+  color:white;
+}
+
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  background:#0b1220;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.logo{
+  width:46px;
+  height:auto;
+}
+.brandText h1{
+  margin:0;
+  font-size:18px;
+}
+.brandText p{
+  margin:2px 0 0;
+  color:#aaa;
+  font-size:13px;
+}
+
+.userArea{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.welcome{
+  color:#cfd8ff;
+  font-size:14px;
+}
+.logoutBtn{
+  border:none;
+  background:#233055;
+  color:white;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.logoutBtn:hover{ background:#2c3a66; }
+
+.container{
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.card{
+  background:#111a2e;
+  border-radius:12px;
+  padding:16px;
+  box-shadow:0 0 15px rgba(0,0,0,0.35);
+}
+
+.tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.tab{
+  border:1px solid rgba(255,255,255,0.12);
+  background:#0b1220;
+  color:white;
+  padding:8px 10px;
+  border-radius:10px;
+  cursor:pointer;
+}
+.tab.active{
+  border-color:#4f8cff;
+  box-shadow:0 0 0 2px rgba(79,140,255,0.22);
+}
+
+h2{ margin: 10px 0 10px; }
+
+.label{
+  display:block;
+  margin:10px 0 6px;
+  color:#aaa;
+}
+
+textarea{
+  width:100%;
+  border:none;
+  border-radius:10px;
+  padding:12px;
+  background:#0b1220;
+  color:white;
+  outline:none;
+  resize:vertical;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:12px 0 16px;
+}
+
+.btn{
+  border:none;
+  border-radius:10px;
+  padding:10px 12px;
+  cursor:pointer;
+  background:#233055;
+  color:white;
+}
+.btn:hover{ background:#2c3a66; }
+
+.btn.primary{
+  background:#4f8cff;
+}
+.btn.primary:hover{ background:#3a6fd9; }
+
+.btn.secondary{
+  background:#1b2a52;
+}
+.btn.secondary:hover{ background:#243564; }
+
+.output{
+  border-top:1px solid rgba(255,255,255,0.10);
+  padding-top:14px;
+}
+
+.muted{ color:#aaa; }
+
+.riskRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.badge{
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:bold;
+  color:#0b1220;
+}
+.badge.low{ background:#2ecc71; }
+.badge.med{ background:#f1c40f; }
+.badge.high{ background:#e74c3c; }
+
+ul, ol{
+  margin-top: 6px;
+}
