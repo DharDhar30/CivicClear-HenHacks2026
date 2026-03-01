@@ -19,7 +19,7 @@ Team Members:
 
 ## Features
 
-### 1. Community Impact (Eco Game)
+### 1. Measure (Eco Game)
 
 **What it does:**
 
@@ -35,7 +35,7 @@ Team Members:
 - Switched to LED bulbs (+5 points)  
 - 7-day streak of eco-actions (+20 bonus)  
 
-### 2. Information Access (Civic Text Guide)
+### 2. Access (Civic Text Guide)
 
 **What it does:**
 
@@ -50,24 +50,7 @@ Team Members:
 - Risk level assessment  
 - Recommended actions to take  
 
-
-### 3. Verify Resources (Resource Recommendation)
-
-**What it does:**
-
-Users input their issue and location and receive relevant local resources along with structured next steps.
-
-**Examples:**
-
-- Housing issues or homelessness risk  
-- Financial difficulty  
-- Mental health needs  
-- Food assistance  
-- Legal help  
-- Healthcare access  
-
-
-### 4. Implementation (Smart Planner)
+### 4. Plan (Smart Planner)
 
 **What it does:**
 
