@@ -1390,7 +1390,6 @@ function renderPlannerSimple(payload) {
     });
   }
 
-  // Next up list (disabled)
   if (!next.length) {
     const div = document.createElement("div");
     div.className = "miniMuted";
@@ -1561,7 +1560,6 @@ planCopyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
-// ===== Start & Tab events =====
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
 clearNormalOutput();
