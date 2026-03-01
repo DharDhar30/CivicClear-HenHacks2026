@@ -4,7 +4,7 @@
 
 Frontend: HTML, CSS, JavaScript, Python
 Backend: Node.js  
-API Integration: External civic and data services  
+API Integration: Gemini API
 
 ## Overview
 
