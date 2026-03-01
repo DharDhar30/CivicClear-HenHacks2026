@@ -1,4 +1,4 @@
-// ===== Login Guard =====
+
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) {
   window.location.href = "login_signup/login.html";
