@@ -1,18 +1,16 @@
+// ===== Login Guard =====
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) window.location.href = "login_signup/login.html?expired=1";
+
+// ===== Storage helpers (per user) =====
 function userKey(suffix) {
   const u = encodeURIComponent(currentUser || "unknown");
-  return "civicclear_user_" + u + "_" + suffix;
+  return `civicclear_user_${u}_${suffix}`;
 }
-
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
-if (raw) {
-  return JSON.parse(raw);
-} else {
-  return fallback;
-}
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
   }
@@ -21,6 +19,7 @@ function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+// ===== Toast =====
 const toastEl = document.getElementById("toast");
 let toastTimer = null;
 function toast(msg) {
@@ -31,6 +30,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1600);
 }
 
+// ===== Dates (local-safe) =====
 function ymdToday() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -54,16 +54,18 @@ function diffDaysYMD(aYmd, bYmd) {
   return Math.round(ms / (1000 * 60 * 60 * 24));
 }
 
+// ===== Welcome + Logout =====
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem("civicclear_current_user");
   window.location.href = "login_signup/login.html";
 });
 
+// ===== DOM =====
 const tabs = document.querySelectorAll(".tab");
 const panelTitle = document.getElementById("panelTitle");
 
-// the Text Guidance
+// Guidance
 const guidanceBox = document.getElementById("guidanceBox");
 const userInput = document.getElementById("userInput");
 const exampleBtn = document.getElementById("exampleBtn");
@@ -120,7 +122,7 @@ const plannedBox = document.getElementById("plannedBox");
 const plannedPotential = document.getElementById("plannedPotential");
 const plannedCount = document.getElementById("plannedCount");
 
-// Impact Forecast 
+// Impact Forecast DOM
 const impactBox = document.getElementById("impactBox");
 const impactAction = document.getElementById("impactAction");
 const impactIntensity = document.getElementById("impactIntensity");
@@ -171,7 +173,7 @@ const planEcoSummary = document.getElementById("planEcoSummary");
 const planEcoCompleted = document.getElementById("planEcoCompleted");
 const planEcoPotential = document.getElementById("planEcoPotential");
 
-
+// ===== State =====
 let currentTab = "guidance";
 
 const titles = {
@@ -187,16 +189,16 @@ const examples = {
     "EMERGENCY ALERT: Severe thunderstorm warning for Newark, DE until 8:30 PM. Winds may exceed 60 mph. Heavy rain and flash flooding possible. Avoid windows and do not drive through flooded roads."
 };
 
+// ===== Activity + streak rules =====
 const DEFAULT_ECO_SCORE = 50;
-let homeEcoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || DEFAULT_ECO_SCORE, 10);
-let streak = parseInt(localStorage.getItem(userKey("streak")) || 0, 10);
+let homeEcoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || String(DEFAULT_ECO_SCORE), 10);
+let streak = parseInt(localStorage.getItem(userKey("streak")) || "0", 10);
 let lastActionDay = localStorage.getItem(userKey("lastActionDay")) || "";
 
 function formatLastActive(ymd) {
   if (!ymd) return "Never";
   return formatYMD(ymd);
 }
-
 function persistDashboardBasics() {
   localStorage.setItem(userKey("ecoScore"), String(homeEcoScore));
   localStorage.setItem(userKey("streak"), String(streak));
@@ -219,6 +221,7 @@ function markActiveToday() {
 }
 refreshHomeNumbers();
 
+// ===== Today state normalization =====
 function ensureTodayObject(key, fallback) {
   const obj = loadJSON(key, fallback);
   if (!obj || obj.date !== ymdToday()) return { ...fallback, date: ymdToday() };
@@ -229,23 +232,16 @@ function ensureTodayObject(key, fallback) {
 let doneToday = ensureTodayObject(userKey("doneToday"), { date: ymdToday(), actions: {} });
 saveJSON(userKey("doneToday"), doneToday);
 
+// ===== Planner eco-to-home preference (persists) =====
 function loadPlannerEcoToHomePref() {
   const pref = localStorage.getItem(userKey("plannerEcoToHomePref"));
-
-  if (pref === null) {
-    return true;
-  }
-
-  return pref === "true";
+  return pref === null ? true : (pref === "true");
 }
-
 function savePlannerEcoToHomePref(v) {
-  localStorage.setItem(
-    userKey("plannerEcoToHomePref"),
-    String(!!v)
-  );
+  localStorage.setItem(userKey("plannerEcoToHomePref"), String(!!v));
 }
 
+// ===== Home UI helpers =====
 function refreshQuickButtons() {
   const buttons = document.querySelectorAll(".qaBtn");
   buttons.forEach(button => {
@@ -257,13 +253,14 @@ function refreshQuickButtons() {
   });
 }
 
+// ===== REAL impact model (trustworthy) =====
 function loadPlannerSaved() {
   return loadJSON(userKey("plannerSaved"), null);
 }
 
-
+// Quick action savings: modest, believable
 function computeQuickActionSavings() {
-  const savings = { bus: 0.6, bottle: 0.1, veg: 0.5, lights: 0.3 }; 
+  const savings = { bus: 0.6, bottle: 0.1, veg: 0.5, lights: 0.3 }; // kg CO2 estimate
   let kg = 0;
   let count = 0;
   for (const [action, isDone] of Object.entries(doneToday.actions || {})) {
@@ -344,29 +341,27 @@ function updateImpactSnapshot() {
 refreshQuickButtons();
 updateImpactSnapshot();
 
+// ===== Reset today (REAL) =====
 function resetToday() {
-  if (!confirm("Reset today's completed actions? (Quick Actions + today's Planner checkmarks only)")) return;
+  if (!confirm("Reset today’s completed actions? (Quick Actions + today's Planner checkmarks only)")) return;
 
   doneToday = { date: ymdToday(), actions: {} };
   saveJSON(userKey("doneToday"), doneToday);
 
-  var saved = loadPlannerSaved();
-  if (saved && saved.today && saved.today.length && saved.date === ymdToday()) {
-    for (var i = 0; i < saved.today.length; i++) {
-      saved.today[i].done = false;
-    }
+  const saved = loadPlannerSaved();
+  if (saved?.today?.length && saved.date === ymdToday()) {
+    saved.today = saved.today.map(it => ({ ...it, done: false }));
     saveJSON(userKey("plannerSaved"), saved);
   }
-}
 
   refreshQuickButtons();
   updateImpactSnapshot();
   renderPlannerFromSavedIfAny();
-  toast("Reset today");
+  toast("Reset today ✅");
 }
 resetTodayBtn?.addEventListener("click", resetToday);
 
-
+// ===== Quick actions -> update eco score + streak =====
 document.querySelectorAll(".qaBtn").forEach(btn => {
   btn.addEventListener("click", () => {
     const action = btn.dataset.action;
@@ -384,10 +379,11 @@ document.querySelectorAll(".qaBtn").forEach(btn => {
 
     refreshQuickButtons();
     updateImpactSnapshot();
-    toast("Logged ");
+    toast("Logged ✅");
   });
 });
 
+// ===== Tooltip click behavior =====
 document.querySelectorAll(".tipIcon").forEach(btn => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -420,6 +416,7 @@ document.addEventListener("click", (e) => {
   });
 });
 
+// ===== Tab switching =====
 function setActiveTab(tabName) {
   currentTab = tabName;
   tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
@@ -446,6 +443,7 @@ function setActiveTab(tabName) {
   updateImpactSnapshot();
 }
 
+// ===== Normal output helpers =====
 function setRisk(level) {
   riskBadge.textContent = level;
   riskBadge.classList.remove("low", "med", "high");
@@ -481,6 +479,7 @@ function renderNormalResult(result) {
   accessibleText.textContent = result.accessible || "";
 }
 
+// ===== Gemini Guidance (ONLY for guidance tab) =====
 async function generateGuidanceWithGemini(userText) {
   const prompt = `
 You are CivicClear, an AI civic assistant.
@@ -539,6 +538,7 @@ Return ONLY JSON.
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
+// ===== Guidance actions =====
 exampleBtn.addEventListener("click", () => {
   if (!userInput) return;
   userInput.value = examples.guidance || "";
@@ -569,7 +569,7 @@ generateBtn.addEventListener("click", async () => {
     const result = await generateGuidanceWithGemini(input);
     renderNormalResult(result);
     guidanceStatus.textContent = "Done. You can copy the result.";
-    toast("Generated");
+    toast("Generated ✅");
     markActiveToday();
   } catch (err) {
     setRisk("Low");
@@ -600,9 +600,10 @@ copyBtn.addEventListener("click", () => {
 
   text += "\nAccessible Version:\n" + accessibleText.textContent;
 
-  navigator.clipboard.writeText(text).then(() => toast("Copied")).catch(() => toast("Copy failed :("));
+  navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
+// ===== Eco output helpers =====
 function clearEcoOutput() {
   if (ecoScoreBigNum) ecoScoreBigNum.textContent = "—";
   if (ecoScoreRating) ecoScoreRating.textContent = "Fill inputs and click Calculate";
@@ -631,92 +632,110 @@ function renderEcoResult(eco) {
   ecoAccessibleText.textContent = eco.accessible;
 }
 
-function formatScoreChange(n) {
-  const rounded = Math.round(n);
-
-  if (rounded === 0) {
-    return "0";
-  }
-
+// ===== Eco calculation =====
 function formatScoreChange(n) {
   const rounded = Math.round(n);
   if (rounded === 0) return "0";
-  if (rounded > 0) return `+${rounded}`;
-  return `${rounded}`; 
+  return (rounded > 0 ? `-${rounded}` : `+${Math.abs(rounded)}`);
 }
-
-function formatScoreChange(n) {
-  var rounded = Math.round(n);
-  if (rounded === 0) return "0";
-  if (rounded > 0) return "+" + rounded;
-  return "" + rounded;
-}
-
 function calculateEcoFromForm() {
-  var commute = ecoCommute && ecoCommute.value ? ecoCommute.value : "car";
-  var miles = ecoMiles && ecoMiles.value ? Number(ecoMiles.value) : 0;
-  if (miles < 0) miles = 0;
+  const commute = ecoCommute?.value || "car";
+  const miles = Math.max(0, Number(ecoMiles?.value || 0));
 
-  var score = 100;
+  let score = 100;
 
-  var perMile = 0.6;
-  if (commute === "walk") perMile = 0;
-  if (commute === "bus") perMile = 0.2;
-  if (commute === "car") perMile = 0.6;
-  if (commute === "rideshare") perMile = 0.8;
+  const perMile = {
+    walk: 0.0,
+    bus: 0.2,
+    car: 0.6,
+    rideshare: 0.8
+  }[commute] ?? 0.6;
 
-  var drivePenalty = miles * perMile;
-  if (commute === "car") drivePenalty += 20;
-  if (commute === "public") drivePenalty += 5;
+  const drivePenalty = miles * perMile;
+  score -= drivePenalty;
 
-  score = score - drivePenalty;
-  if (ecoCarpool && ecoCarpool.checked) score += 5;
+  if (ecoCarpool?.checked) score += 5;
 
-  var diet = ecoDiet && ecoDiet.value ? ecoDiet.value : "mixed";
-  var dietPenalty = 6;
-  if (diet === "vegan") dietPenalty = -5;
-  if (diet === "vegetarian") dietPenalty = -2;
-  if (diet === "heavyMeat") dietPenalty = 16;
-  score = score - dietPenalty;
+  const diet = ecoDiet?.value || "mixed";
+  const dietPenaltyMap = { vegan: -5, vegetarian: -2, mixed: 6, heavyMeat: 16 };
+  const dietPenalty = (dietPenaltyMap[diet] ?? 6);
+  score -= dietPenalty;
 
-  var shopping = ecoShopping && ecoShopping.value ? ecoShopping.value : "small";
-  var shoppingPenalty = 2;
-  if (shopping === "none") shoppingPenalty = -2;
-  if (shopping === "big") shoppingPenalty = 8;
-  score = score - shoppingPenalty;
+  const shopping = ecoShopping?.value || "small";
+  const shoppingPenaltyMap = { none: -2, small: 2, big: 8 };
+  const shoppingPenalty = (shoppingPenaltyMap[shopping] ?? 2);
+  score -= shoppingPenalty;
 
-  var recycleHabit = ecoRecycleHabit && ecoRecycleHabit.value ? ecoRecycleHabit.value : "sometimes";
-  var recyclePenalty = 2;
-  if (recycleHabit === "always") recyclePenalty = -3;
-  if (recycleHabit === "rarely") recyclePenalty = 6;
+  const recycleHabit = ecoRecycleHabit?.value || "sometimes";
+  const recyclePenaltyMap = { always: -3, sometimes: 2, rarely: 6 };
+  const recyclePenalty = (recyclePenaltyMap[recycleHabit] ?? 2);
+  score -= recyclePenalty;
 
-  var plastic = ecoPlastic && ecoPlastic.value ? ecoPlastic.value : "medium";
-  var plasticPenalty = 2;
-  if (plastic === "low") plasticPenalty = -2;
-  if (plastic === "high") plasticPenalty = 7;
+  const plastic = ecoPlastic?.value || "medium";
+  const plasticPenaltyMap = { low: -2, medium: 2, high: 7 };
+  const plasticPenalty = (plasticPenaltyMap[plastic] ?? 2);
+  score -= plasticPenalty;
 
-  var wasteTotal = recyclePenalty + plasticPenalty;
-  score = score - wasteTotal;
+  score = Math.max(0, Math.min(100, Math.round(score)));
 
-  if (score < 0) score = 0;
-  if (score > 100) score = 100;
-  score = Math.round(score);
-
-  var rating = "Excellent";
+  let rating = "Excellent";
   if (score < 80) rating = "Good";
   if (score < 60) rating = "Fair";
   if (score < 40) rating = "Poor";
 
-  return {
-    score: score,
-    rating: rating,
-    commuteText: "Transport: " + commute + " • Miles: " + miles + " • Score change: " + formatScoreChange(drivePenalty),
-    dietText: "Food: " + diet + " • Score change: " + formatScoreChange(dietPenalty),
-    consumptionText: "Shopping: " + shopping + " • Score change: " + formatScoreChange(shoppingPenalty),
-    wasteText: "Waste: Recycle " + recycleHabit + ", Plastic " + plastic + " • Score change: " + formatScoreChange(wasteTotal)
-  };
+  const commuteLabel =
+    commute === "walk" ? "Walk/Bike" :
+      commute === "bus" ? "Public Transit" :
+        commute === "rideshare" ? "Rideshare" : "Car";
+
+  const dietLabel =
+    diet === "vegan" ? "Vegan" :
+      diet === "vegetarian" ? "Vegetarian" :
+        diet === "heavyMeat" ? "Heavy meat" : "Mixed";
+
+  const shopLabel =
+    shopping === "none" ? "No shopping" :
+      shopping === "big" ? "Big purchase" : "Small purchase";
+
+  const recycleLabel =
+    recycleHabit === "always" ? "Always" :
+      recycleHabit === "rarely" ? "Rarely" : "Sometimes";
+
+  const plasticLabel =
+    plastic === "low" ? "Low (0–1)" :
+      plastic === "high" ? "High (5+)" : "Medium (2–4)";
+
+  const commuteText = `Transport: ${commuteLabel} • Miles: ${miles} • Score change: -${Math.round(drivePenalty)}${ecoCarpool?.checked ? " • Carpool +5" : ""}`;
+  const dietText = `Food: ${dietLabel} • Score change: ${formatScoreChange(dietPenalty)}`;
+  const consumptionText = `Shopping: ${shopLabel} • Score change: ${formatScoreChange(shoppingPenalty)}`;
+  const wasteTotal = recyclePenalty + plasticPenalty;
+  const wasteText = `Waste: Recycle ${recycleLabel}, Single-use ${plasticLabel} • Score change: ${formatScoreChange(wasteTotal)}`;
+
+  const biggest = [
+    { name: "Driving", value: drivePenalty },
+    { name: "Diet", value: Math.max(0, dietPenalty) },
+    { name: "Shopping", value: Math.max(0, shoppingPenalty) },
+    { name: "Waste", value: Math.max(0, wasteTotal) }
+  ].sort((a, b) => b.value - a.value)[0].name;
+
+  let tip1 = "Try one small change today.";
+  if (biggest === "Driving") tip1 = "Driving was biggest: combine trips, carpool, or take transit once.";
+  if (biggest === "Diet") tip1 = "Diet was biggest: swap one heavy-meat meal for beans/vegetarian.";
+  if (biggest === "Shopping") tip1 = "Shopping was biggest: skip one purchase or buy secondhand.";
+  if (biggest === "Waste") tip1 = "Waste was biggest: reduce single-use items and recycle/compost.";
+
+  const actions = [
+    tip1,
+    "Pick one habit to repeat 2–3 days this week for a noticeable improvement.",
+    "Use Quick Actions + Planner checkboxes to reinforce habits."
+  ];
+
+  const accessible = `Your Eco Score is ${score} out of 100 (${rating}). Higher is better.`;
+
+  return { score, rating, commuteText, dietText, consumptionText, wasteText, actions, accessible };
 }
 
+// ===== Eco history (PER USER) =====
 function getEcoHistory() {
   return loadJSON(userKey("ecoHistory"), []);
 }
@@ -776,7 +795,7 @@ ecoCalcBtn.addEventListener("click", () => {
   markActiveToday();
 
   ecoStatus.textContent = "Saved. Home Eco Score updated.";
-  toast("Calculated");
+  toast("Calculated ✅");
 });
 
 ecoClearBtn.addEventListener("click", () => {
@@ -806,11 +825,12 @@ ecoCopyBtn.addEventListener("click", () => {
   text += "History:\n" + (ecoStatsText.textContent || "") + "\n";
   Array.from(ecoHistoryList.children).forEach(li => text += `- ${li.textContent}\n`);
 
-  navigator.clipboard.writeText(text).then(() => toast("Copied")).catch(() => toast("Copy failed :("));
+  navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
+// ===== Impact Forecast (NOT counted as today) =====
 function impactBase(action) {
-  var map = {
+  const map = {
     drive_less: { kg: 6.0, dollars: 6.5, note: "10–15 miles less/week" },
     transit_more: { kg: 8.0, dollars: 10, note: "Replacing 1–2 car trips/week" },
     energy: { kg: 5.0, dollars: 8, note: "Lowering electricity use" },
@@ -818,46 +838,22 @@ function impactBase(action) {
     reusable: { kg: 0.6, dollars: 3, note: "Replacing bottled drinks" },
     recycle: { kg: 1.5, dollars: 1, note: "Better recycling/composting" }
   };
-  if (map[action]) return map[action];
-  return map["drive_less"];
+  return map[action] || map.drive_less;
 }
-
 function impactMultiplier(intensity) {
-  if (intensity === "light") return 0.7;
-  if (intensity === "strong") return 1.4;
-  return 1.0;
+  return intensity === "light" ? 0.7 : intensity === "strong" ? 1.4 : 1.0;
 }
-
 function computeImpact(action, intensity, weeks) {
-  var base = impactBase(action);
-  var mult = impactMultiplier(intensity);
-  var w = 1;
-  if (weeks) w = Number(weeks);
-  if (w < 1) w = 1;
+  const base = impactBase(action);
+  const mult = impactMultiplier(intensity);
+  const w = Math.max(1, Number(weeks || 1));
+  const kg = Math.max(0, base.kg * mult * w);
+  const dollars = Math.max(0, base.dollars * mult * w);
 
-  var kg = base.kg * mult * w;
-  if (kg < 0) kg = 0;
+  const phoneCharges = Math.round(kg * 80);
+  const treeMonths = Math.max(1, Math.round(kg / 2));
+  const score = Math.min(100, Math.round(20 + kg * 3));
 
-  var dollars = base.dollars * mult * w;
-  if (dollars < 0) dollars = 0;
-
-  var phoneCharges = Math.round(kg * 80);
-  var treeMonths = Math.round(kg / 2);
-  if (treeMonths < 1) treeMonths = 1;
-
-  var score = 20 + kg * 3;
-  if (score > 100) score = 100;
-  score = Math.round(score);
-
-  return {
-    kg: kg,
-    dollars: dollars,
-    phoneCharges: phoneCharges,
-    treeMonths: treeMonths,
-    score: score,
-    note: base.note
-  };
-}
   return {
     kg: Number(kg.toFixed(1)),
     dollars: Math.round(dollars),
@@ -916,36 +912,34 @@ function clearImpactUI() {
   impactStatusLine.textContent = "";
 }
 
-impactRunBtn.addEventListener("click", function() {
-  var action = impactAction.value;
-  var intensity = impactIntensity.value;
-  var weeks = Number(impactWeeks.value);
-  if (!weeks || weeks < 1) weeks = 1;
+impactRunBtn.addEventListener("click", () => {
+  const action = impactAction.value;
+  const intensity = impactIntensity.value;
+  const weeks = Number(impactWeeks.value || 1);
 
-  var out = computeImpact(action, intensity, weeks);
+  const out = computeImpact(action, intensity, weeks);
 
-  impactCO2.textContent = out.kg + " kg";
+  impactCO2.textContent = `${out.kg} kg`;
   impactCO2Note.textContent = out.note;
 
-  impactMoney.textContent = "$" + Math.round(out.dollars);
-  impactMoneyNote.textContent = "Estimated over " + weeks + " week(s)";
+  impactMoney.textContent = `$${out.dollars}`;
+  impactMoneyNote.textContent = `Estimated over ${weeks} week(s)`;
 
-  impactEquiv.textContent = "Charging " + out.phoneCharges + " phones • " + out.treeMonths + " tree-months";
-  impactScore.textContent = out.score + "/100";
+  impactEquiv.textContent = `Charging ${out.phoneCharges} phones • ${out.treeMonths} tree-months`;
+  impactScore.textContent = `${out.score}/100`;
 
-  var label = impactAction.options[impactAction.selectedIndex].textContent;
+  const label = impactAction.options[impactAction.selectedIndex].textContent.trim();
   addImpactHistory({
     date: ymdToday(),
-    label: label + " • " + impactIntensity.value + " • " + weeks + "w",
+    label: `${label} • ${impactIntensity.value} • ${weeks}w`,
     kg: out.kg,
     dollars: out.dollars,
     score: out.score
   });
-
   renderImpactHistory();
 
   impactStatusLine.textContent = "Saved as a forecast (does not affect Today’s Impact).";
-  toast("Forecast saved");
+  toast("Forecast saved ✅");
 });
 
 impactClearBtn.addEventListener("click", clearImpactUI);
@@ -967,24 +961,25 @@ impactCopyBtn.addEventListener("click", () => {
   text += "Recent Forecasts:\n";
   if (!h.length) text += "- (none)\n";
   else h.forEach(item => text += `- ${item.label} | ${item.kg} kg | ${formatYMD(item.date)}\n`);
-  navigator.clipboard.writeText(text).then(() => toast("Copied")).catch(() => toast("Copy failed :("));
+  navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
+// ===== Resources (LINKS ONLY) =====
 function linkCard(title, url, tag) {
   const div = document.createElement("div");
-  div.innerHTML = '<a href="' + url + '" target="_blank">' + title + '</a> <span>' + tag + '</span>';
+  div.className = "resLink";
+  div.innerHTML = `
+    <a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>
+    <span class="resTag">${tag}</span>
+  `;
   return div;
 }
-
 function mapsSearchLink(query) {
-  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
-
 function googleSearchLink(query) {
-  return "https://www.google.com/search?q=" + encodeURIComponent(query);
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
-
-document.body.appendChild(linkCard("USA.gov", googleSearchLink("benefits"), "Official"));
 
 function baseLinksForCategory(category) {
   const common = [
@@ -1040,23 +1035,17 @@ function renderResourceLinks() {
   if (!resLinks) return;
   resLinks.innerHTML = "";
 
-  var category = resCategory.value;
-  var loc = (resLocation.value || "").trim();
+  const category = resCategory.value;
+  const loc = (resLocation.value || "").trim();
 
-  var links = localShortcuts(category, loc).concat(baseLinksForCategory(category));
+  const links = [...localShortcuts(category, loc), ...baseLinksForCategory(category)];
+  links.forEach(l => resLinks.appendChild(linkCard(l.title, l.url, l.tag)));
 
-  for (var i = 0; i < links.length; i++) {
-    var l = links[i];
-    resLinks.appendChild(linkCard(l.title, l.url, l.tag));
-  }
+  resStatus.textContent = loc
+    ? "Showing trusted links + local map/search shortcuts."
+    : "Showing trusted links. Add city/state for local map links.";
 
-  if (loc) {
-    resStatus.textContent = "Showing trusted links + local map/search shortcuts.";
-  } else {
-    resStatus.textContent = "Showing trusted links. Add city/state for local map links.";
-  }
-
-  saveJSON(userKey("resourcesPrefs"), { category: category, loc: loc });
+  saveJSON(userKey("resourcesPrefs"), { category, loc });
 }
 
 function loadResourcesPrefsAndRender() {
@@ -1068,7 +1057,7 @@ function loadResourcesPrefsAndRender() {
 
 resShowBtn?.addEventListener("click", () => {
   renderResourceLinks();
-  toast("Links updated");
+  toast("Links updated ✅");
 });
 resClearBtn?.addEventListener("click", () => {
   resLocation.value = "";
@@ -1081,9 +1070,10 @@ resCopyBtn?.addEventListener("click", () => {
   let text = `Resources (${resCategory.value})\n`;
   text += `Location: ${resLocation.value || "—"}\n\nLinks:\n`;
   resLinks.querySelectorAll("a").forEach(a => { text += `- ${a.textContent}: ${a.href}\n`; });
-  navigator.clipboard.writeText(text).then(() => toast("Copied")).catch(() => toast("Copy failed :("));
+  navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
+// ===== Planner (Simplified + Reliable) =====
 const WEEKDAY_MAP = {
   sun: 0, sunday: 0,
   mon: 1, monday: 1,
@@ -1212,6 +1202,7 @@ function parseTasksSimple(text) {
   return { tasks, ignored, total: lines.length };
 }
 
+// Sort: due soonest, then priority, then eco, then longer tasks
 function sortTasksForToday(tasks) {
   const now = new Date();
   const startDow = now.getDay();
@@ -1293,7 +1284,7 @@ function renderTodayFocus(todayItems) {
 
   if (!todo.length) {
     const li = document.createElement("li");
-    li.textContent = "You’re done! Pick one small bonus task or rest.";
+    li.textContent = "✅ You’re done! Pick one small bonus task or rest.";
     planTodayFocus.appendChild(li);
     return;
   }
@@ -1389,7 +1380,7 @@ function renderPlannerSimple(payload) {
           planEcoPotential.textContent = `${ecoStatsNow.todoKg.toFixed(1)} kg (${ecoStatsNow.todoCount})`;
         }
 
-        toast(it.done ? "Checked" : "Unchecked");
+        toast(it.done ? "Checked ✅" : "Unchecked");
       });
 
       row.appendChild(cb);
@@ -1399,6 +1390,7 @@ function renderPlannerSimple(payload) {
     });
   }
 
+  // Next up list (disabled)
   if (!next.length) {
     const div = document.createElement("div");
     div.className = "miniMuted";
@@ -1475,17 +1467,11 @@ function renderPlannerFromSavedIfAny() {
   updateImpactSnapshot();
 }
 
-if (planEcoToHome) {
-  planEcoToHome.addEventListener("change", function() {
-    savePlannerEcoToHomePref(planEcoToHome.checked);
-    updateImpactSnapshot();
-    if (planEcoToHome.checked) {
-      toast("Planner counts toward Today");
-    } else {
-      toast("Planner removed from Today");
-    }
-  });
-}
+planEcoToHome?.addEventListener("change", () => {
+  savePlannerEcoToHomePref(planEcoToHome.checked);
+  updateImpactSnapshot();
+  toast(planEcoToHome.checked ? "Planner counts toward Today ✅" : "Planner removed from Today");
+});
 
 planGenerateBtn.addEventListener("click", () => {
   const text = (planTasks.value || "").trim();
@@ -1524,7 +1510,7 @@ planGenerateBtn.addEventListener("click", () => {
   const ignoredMsg = parsed.ignored > 0 ? ` (${parsed.ignored} line(s) ignored — too short/unclear)` : "";
   planStatus.textContent = (planSave.checked ? "Plan saved." : "Plan built (not saved).") + ignoredMsg;
 
-  toast("Its built!");
+  toast("Plan built ✅");
 });
 
 planLoadBtn.addEventListener("click", () => {
@@ -1551,50 +1537,31 @@ planCopyBtn.addEventListener("click", () => {
   } else {
     text += `Budget: ${saved.budget} min\nSaved: ${formatYMD(saved.date)}\n\n`;
 
-text += "Today:\n";
+    text += "Today:\n";
+    if (!saved.today?.length) text += "- (none)\n";
+    else saved.today.forEach(it => {
+      const tags = [];
+      if (it.priority) tags.push("Priority");
+      if (it.dueIndex != null) tags.push(`Due ${weekdayLabel(it.dueIndex)}`);
+      if (it.isEco) tags.push(`Eco ${it.ecoKg}kg`);
+      const done = it.done ? " ✅" : "";
+      text += `- ${it.text} (${it.minutes} min)${tags.length ? ` [${tags.join(", ")}]` : ""}${done}\n`;
+    });
 
-if (!saved.today || saved.today.length === 0) {
-  text += "- (none)\n";
-} else {
-  for (var i = 0; i < saved.today.length; i++) {
-    var it = saved.today[i];
-    var tags = [];
-
-    if (it.priority) tags.push("Priority");
-    if (it.dueIndex != null) tags.push("Due " + weekdayLabel(it.dueIndex));
-    if (it.isEco) tags.push("Eco " + it.ecoKg + "kg");
-
-    var done = "";
-    if (it.done) done = " ✅";
-
-    text += "- " + it.text + " (" + it.minutes + " min)";
-    if (tags.length > 0) text += " [" + tags.join(", ") + "]";
-    text += done + "\n";
+    text += "\nNext Up:\n";
+    if (!saved.next?.length) text += "- (none)\n";
+    else saved.next.forEach(it => {
+      const tags = [];
+      if (it.priority) tags.push("Priority");
+      if (it.dueIndex != null) tags.push(`Due ${weekdayLabel(it.dueIndex)}`);
+      if (it.isEco) tags.push(`Eco ${it.ecoKg}kg`);
+      text += `- ${it.text} (${it.minutes} min)${tags.length ? ` [${tags.join(", ")}]` : ""}\n`;
+    });
   }
-}
-text += "\nNext Up:\n";
+  navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
+});
 
-if (!saved.next || saved.next.length === 0) {
-  text += "- (none)\n";
-} else {
-  for (var i = 0; i < saved.next.length; i++) {
-    var it = saved.next[i];
-    var tags = [];
-
-    if (it.priority) tags.push("Priority");
-    if (it.dueIndex != null) tags.push("Due " + weekdayLabel(it.dueIndex));
-    if (it.isEco) tags.push("Eco " + it.ecoKg + "kg");
-
-    text += "- " + it.text + " (" + it.minutes + " min)";
-    if (tags.length > 0) text += " [" + tags.join(", ") + "]";
-    text += "\n";
-  }
-}
-
-navigator.clipboard.writeText(text)
-  .then(function() { toast("Copied"); })
-  .catch(function() { toast("Copy failed :("); });
-
+// ===== Start & Tab events =====
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
 clearNormalOutput();
