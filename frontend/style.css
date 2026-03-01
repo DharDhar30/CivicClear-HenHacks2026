@@ -103,7 +103,7 @@ input[type="text"], input[type="number"]{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
-  margin:12px 0 16px;
+  margin:12px 0 10px;
 }
 
 .btn{
@@ -121,6 +121,17 @@ input[type="text"], input[type="number"]{
 
 .btn.secondary{ background:#1b2a52; }
 .btn.secondary:hover{ background:#243564; }
+
+.btn.danger{
+  background:#4a1d1d;
+  border:1px solid rgba(231,76,60,0.35);
+}
+.btn.danger:hover{ background:#5a2323; }
+
+.btn:disabled{
+  opacity:0.7;
+  cursor:not-allowed;
+}
 
 .output{
   border-top:1px solid rgba(255,255,255,0.10);
@@ -228,6 +239,12 @@ ul, ol{ margin-top: 6px; }
   opacity:0.95;
 }
 
+.plannedBox{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+
 .quickActions{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -304,12 +321,6 @@ ul, ol{ margin-top: 6px; }
   pointer-events:none;
   transition: all 0.12s ease;
   z-index:10;
-}
-
-.tipWrap:hover .tipText{
-  opacity:1;
-  transform: translateY(0);
-  pointer-events:auto;
 }
 
 .sectionDivider{
@@ -438,7 +449,7 @@ ul, ol{ margin-top: 6px; }
 
 .panelSection{ margin-top: 10px; }
 
-
+/* ===== Impact Forecast ===== */
 .impactResultGrid{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -480,6 +491,10 @@ ul, ol{ margin-top: 6px; }
   color:#dbe6ff;
   font-weight:800;
   font-size:12px;
+}
+.miniPill{
+  padding:5px 9px;
+  font-size:11px;
 }
 
 /* ===== Resources ===== */
@@ -547,11 +562,59 @@ ul, ol{ margin-top: 6px; }
   margin-bottom:8px;
 }
 .taskRow input{ transform: scale(1.1); }
-.taskText{
-  flex:1;
-}
+.taskText{ flex:1; }
 .taskMeta{
   font-size:12px;
   color:#aaa;
   font-weight:700;
+}
+
+.ecoSummary{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+.ecoSummaryBox{
+  flex:1;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+.ecoSummaryVal{
+  margin-top:4px;
+  font-weight:900;
+  color:#dbe6ff;
+}
+
+/* layout helper */
+.rowBetween{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+/* ===== Toast ===== */
+.toast{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(17, 26, 46, 0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  color: #dbe6ff;
+  font-weight: 800;
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: all 0.15s ease;
+  z-index: 50;
+}
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
 }

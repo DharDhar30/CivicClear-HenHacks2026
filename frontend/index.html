@@ -29,14 +29,14 @@
       <div class="tabs" aria-label="Features">
         <button class="tab active" data-tab="guidance">Home</button>
         <button class="tab" data-tab="carbon">Eco Score</button>
-        <button class="tab" data-tab="impact">Impact Simulator</button>
+        <button class="tab" data-tab="impact">Impact Forecast</button>
         <button class="tab" data-tab="resources">Resources</button>
         <button class="tab" data-tab="planner">Action Planner</button>
       </div>
 
       <h2 id="panelTitle">Home & Civic Guidance</h2>
 
-      <!-- HOME DASHBOARD (shows only on guidance tab) -->
+      <!-- HOME DASHBOARD -->
       <div id="homeDash" class="homeDash">
         <div class="homeTop">
           <div class="pill" id="ecoPill">
@@ -44,8 +44,7 @@
             <span class="tipWrap">
               <button class="tipIcon" type="button" aria-label="Eco score info">?</button>
               <span class="tipText">
-                Eco Score is a simple daily habit score. It goes up when you complete quick actions.
-                Higher score = lower impact today.
+                Eco Score is a simple daily habit score. It updates from Eco Score Calculator and Quick Actions.
               </span>
             </span>
           </div>
@@ -58,26 +57,49 @@
 
         <div class="grid2">
           <div class="miniCard">
-            <h3 class="miniTitle">Today’s Impact</h3>
-            <p class="miniMuted">Quick snapshot based on your actions.</p>
+            <div class="rowBetween">
+              <div>
+                <h3 class="miniTitle">Today’s Impact (REAL)</h3>
+                <p class="miniMuted">Counts only completed actions today (Quick Actions + Planner eco checkmarks).</p>
+              </div>
+              <button id="resetTodayBtn" class="btn danger" type="button" title="Reset today’s completed actions">
+                Reset today
+              </button>
+            </div>
 
             <div class="statRow">
               <div class="statBox">
-                <div class="statLabel">Footprint</div>
+                <div class="statLabel">
+                  Impact Level
+                  <span class="tipWrap">
+                    <button class="tipIcon" type="button" aria-label="Impact level info">?</button>
+                    <span class="tipText">
+                      This rating is based on real completed eco actions today (not forecasts).
+                    </span>
+                  </span>
+                </div>
                 <div class="statValue" id="impactStatus">MEDIUM</div>
               </div>
               <div class="statBox">
-                <div class="statLabel">Saved</div>
-                <div class="statValue" id="impactSaved">+0.0 kg CO₂</div>
+                <div class="statLabel">CO₂ saved today</div>
+                <div class="statValue" id="impactSaved">0.0 kg</div>
               </div>
             </div>
 
-            <div class="equiv" id="impactEquivalent">≈ Charging 0 phones</div>
+            <div class="equiv" id="impactEquivalent">Fun equivalent: Charging 0 phones</div>
+            <div class="miniMuted" id="impactSources">From: Quick Actions (0) • Planner completed (0)</div>
+
+            <div id="plannedBox" class="plannedBox" style="display:none;">
+              <div class="miniMuted" style="margin-top:10px;">
+                Planned eco potential today: <strong id="plannedPotential">0.0 kg</strong>
+                <span class="miniMuted"> • Unchecked eco tasks: <strong id="plannedCount">0</strong></span>
+              </div>
+            </div>
           </div>
 
           <div class="miniCard">
             <h3 class="miniTitle">Quick Actions</h3>
-            <p class="miniMuted">One tap updates your eco score.</p>
+            <p class="miniMuted">One tap logs an action + boosts Eco Score.</p>
 
             <div class="quickActions">
               <button class="qaBtn" data-action="bus">🚌 Public transit</button>
@@ -98,18 +120,28 @@
         </div>
       </div>
 
-      <!-- ===== GUIDANCE TAB INPUT (AI) ===== -->
+      <!-- GUIDANCE -->
       <div id="guidanceBox" class="panelSection">
         <label class="label" for="userInput">Input</label>
         <textarea id="userInput" rows="7" placeholder="Paste an alert, public notice, campus message, policy, or emergency instructions..."></textarea>
+
+        <p class="miniMuted" style="margin-top:8px;">
+          Safety note: For immediate danger call local emergency services. Always follow official alerts when available.
+        </p>
+
+        <div class="actions" id="guidanceActions">
+          <button id="exampleBtn" class="btn secondary">Example</button>
+          <button id="generateBtn" class="btn primary">Generate</button>
+          <button id="clearGuidanceBtn" class="btn">Clear</button>
+          <button id="copyBtn" class="btn">Copy Output</button>
+        </div>
+        <div class="miniMuted" id="guidanceStatus" aria-live="polite"></div>
       </div>
 
-      <!-- ===== ECO SCORE TAB ===== -->
+      <!-- ECO SCORE -->
       <div id="ecoLayout" class="ecoLayout" style="display:none;">
-
         <div class="ecoLeft">
           <div class="ecoForm">
-
             <div class="ecoRow">
               <div class="ecoField">
                 <label class="label">Commute Type</label>
@@ -168,6 +200,16 @@
               </div>
             </div>
 
+            <p class="miniMuted" style="margin-top:10px;">
+              Transparency: this score is a simplified demo estimate for comparing habits, not a scientific audit.
+            </p>
+
+            <div class="actions" id="ecoActions">
+              <button id="ecoCalcBtn" class="btn primary">Calculate Eco Score</button>
+              <button id="ecoClearBtn" class="btn">Clear</button>
+              <button id="ecoCopyBtn" class="btn">Copy</button>
+            </div>
+            <div class="miniMuted" id="ecoStatus" aria-live="polite"></div>
           </div>
         </div>
 
@@ -199,15 +241,16 @@
             </div>
           </div>
         </div>
-
       </div>
+
+      <!-- IMPACT FORECAST -->
       <div id="impactBox" class="panelSection" style="display:none;">
         <div class="grid2">
           <div class="miniCard">
-            <h3 class="miniTitle">Choose an action</h3>
-            <p class="miniMuted">Simulate impact and save a quick “what-if” record.</p>
+            <h3 class="miniTitle">Impact Forecast</h3>
+            <p class="miniMuted">“If I keep this habit for a few weeks, what could I save?”</p>
 
-            <label class="label">Action</label>
+            <label class="label">Habit</label>
             <select id="impactAction" class="ecoSelect">
               <option value="drive_less">🚗 Reduce driving</option>
               <option value="transit_more">🚌 Use public transit</option>
@@ -233,30 +276,31 @@
               </div>
             </div>
 
-            <label class="ecoCheck" style="margin-top:12px;">
-              <input type="checkbox" id="impactSaveToHome" checked />
-              Also count this toward Today’s Impact snapshot
-            </label>
-
             <div class="actions" style="margin-top:12px;">
-              <button id="impactRunBtn" class="btn primary">Simulate</button>
+              <button id="impactRunBtn" class="btn primary">Forecast</button>
               <button id="impactClearBtn" class="btn secondary">Clear</button>
+              <button id="impactClearHistoryBtn" class="btn">Clear History</button>
             </div>
+
+            <p class="miniMuted" style="margin-top:10px;">
+              Note: forecasts are estimates and do not affect Today’s Impact.
+            </p>
+            <div class="miniMuted" id="impactStatusLine" aria-live="polite"></div>
           </div>
 
           <div class="miniCard">
             <h3 class="miniTitle">Results</h3>
-            <p class="miniMuted">A realistic estimate (good for demo + planning).</p>
+            <p class="miniMuted">Forecasted savings over time.</p>
 
             <div class="impactResultGrid">
               <div class="impactMetric">
-                <div class="statLabel">CO₂ Reduced</div>
+                <div class="statLabel">CO₂ saved</div>
                 <div class="statValue" id="impactCO2">—</div>
                 <div class="miniMuted" id="impactCO2Note"></div>
               </div>
 
               <div class="impactMetric">
-                <div class="statLabel">Money Saved</div>
+                <div class="statLabel">Money saved</div>
                 <div class="statValue" id="impactMoney">—</div>
                 <div class="miniMuted" id="impactMoneyNote"></div>
               </div>
@@ -264,29 +308,37 @@
               <div class="impactMetric">
                 <div class="statLabel">Equivalents</div>
                 <div class="statValue" id="impactEquiv">—</div>
-                <div class="miniMuted">Phone charges / tree-months</div>
+                <div class="miniMuted">Fun equivalents (not scientific)</div>
               </div>
 
               <div class="impactMetric">
                 <div class="statLabel">Impact Score</div>
                 <div class="statValue" id="impactScore">—</div>
-                <div class="miniMuted">Higher = better</div>
+                <div class="miniMuted">Higher = bigger potential</div>
               </div>
             </div>
 
             <div class="sectionDivider"></div>
 
-            <h3 class="miniTitle">Recent Simulations</h3>
-            <p class="miniMuted" id="impactHistoryStats">No simulations yet.</p>
+            <div class="rowBetween">
+              <div>
+                <h3 class="miniTitle">Recent Forecasts</h3>
+                <p class="miniMuted" id="impactHistoryStats">No forecasts yet.</p>
+              </div>
+              <button id="impactCopyBtn" class="btn" type="button">Copy</button>
+            </div>
+
             <ul id="impactHistoryList" class="listNice"></ul>
           </div>
         </div>
       </div>
+
+      <!-- RESOURCES -->
       <div id="resourcesBox" class="panelSection" style="display:none;">
         <div class="grid2">
           <div class="miniCard">
             <h3 class="miniTitle">What do you need help with?</h3>
-            <p class="miniMuted">CivicClear will suggest steps + trustworthy starting points.</p>
+            <p class="miniMuted">Clear steps + trustworthy starting points.</p>
 
             <label class="label">Category</label>
             <select id="resCategory" class="ecoSelect">
@@ -298,21 +350,31 @@
               <option value="emergency">🚨 Emergency / Shelter</option>
             </select>
 
-            <label class="label" style="margin-top:12px;">Where are you (state or city)?</label>
+            <label class="label" style="margin-top:12px;">Where are you (city, state)?</label>
             <input id="resLocation" class="ecoInput" type="text" placeholder="Example: Newark, DE" />
 
             <label class="label" style="margin-top:12px;">Details (optional)</label>
-            <textarea id="resDetails" rows="5" placeholder="Example: behind on rent, need food for this week, lost job, need shelter..."></textarea>
+            <textarea id="resDetails" rows="5" placeholder="Example: behind on rent, eviction notice, need food this week, job scam..."></textarea>
 
             <div class="actions">
-              <button id="resGenerateBtn" class="btn primary">Generate</button>
+              <button id="resGenerateBtn" class="btn primary">Build Plan</button>
               <button id="resExampleBtn" class="btn secondary">Example</button>
             </div>
+
+            <p class="miniMuted" style="margin-top:10px;">
+              Privacy note: your location is not stored—it's only used to build map/search links.
+            </p>
+            <div class="miniMuted" id="resStatus" aria-live="polite"></div>
           </div>
 
           <div class="miniCard">
-            <h3 class="miniTitle">Resource Plan</h3>
-            <p class="miniMuted">Clear steps + links you can click right now.</p>
+            <div class="rowBetween">
+              <div>
+                <h3 class="miniTitle">Resource Plan</h3>
+                <p class="miniMuted">Clear steps + links you can click right now.</p>
+              </div>
+              <button id="resCopyBtn" class="btn" type="button">Copy</button>
+            </div>
 
             <div class="resourceLinks" id="resLinks"></div>
 
@@ -328,6 +390,8 @@
           </div>
         </div>
       </div>
+
+      <!-- PLANNER -->
       <div id="plannerBox" class="panelSection" style="display:none;">
         <div class="grid2">
           <div class="miniCard">
@@ -336,12 +400,22 @@
 
             <label class="label">Tasks (one per line)</label>
             <textarea id="planTasks" rows="7" placeholder="Example:
-Lab report — due Fri
-Quiz study — Wed
+Bus to campus — Mon
+Study for quiz — Wed 60 min
 Work shift — Thu 5–9pm
-Grocery run — 30 min"></textarea>
+Reusable bottle
+Meatless dinner"></textarea>
 
             <div class="ecoRow" style="margin-top:12px;">
+              <div class="ecoField">
+                <label class="label">Mode</label>
+                <select id="planMode" class="ecoSelect">
+                  <option value="productivity" selected>📚 Productivity</option>
+                  <option value="eco">🌱 Eco Habits</option>
+                  <option value="mixed">🧩 Mixed</option>
+                </select>
+              </div>
+
               <div class="ecoField">
                 <label class="label">Time Available / day</label>
                 <select id="planTime" class="ecoSelect">
@@ -351,6 +425,9 @@ Grocery run — 30 min"></textarea>
                   <option value="180">3 hours</option>
                 </select>
               </div>
+            </div>
+
+            <div class="ecoRow" style="margin-top:12px;">
               <div class="ecoField">
                 <label class="label">Plan Days</label>
                 <select id="planDays" class="ecoSelect">
@@ -358,6 +435,14 @@ Grocery run — 30 min"></textarea>
                   <option value="5" selected>Next 5 days</option>
                   <option value="7">Next 7 days</option>
                 </select>
+              </div>
+
+              <div class="ecoField">
+                <label class="label">Eco Impact</label>
+                <label class="ecoCheck" style="margin-top:6px;">
+                  <input type="checkbox" id="planEcoToHome" checked />
+                  Count completed eco tasks toward Today’s Impact
+                </label>
               </div>
             </div>
 
@@ -371,11 +456,32 @@ Grocery run — 30 min"></textarea>
               <button id="planLoadBtn" class="btn secondary">Load Saved</button>
               <button id="planClearBtn" class="btn">Clear</button>
             </div>
+
+            <p class="miniMuted" style="margin-top:10px;">
+              Tips: Include “Mon / Tue / Wed” or “60 min”. Eco tasks like “bus”, “walk”, “recycle”, “meatless” get 🌱 tags.
+            </p>
+            <div class="miniMuted" id="planStatus" aria-live="polite"></div>
           </div>
 
           <div class="miniCard">
-            <h3 class="miniTitle">Your Plan</h3>
-            <p class="miniMuted" id="planMeta">No plan yet. Build one to start.</p>
+            <div class="rowBetween">
+              <div>
+                <h3 class="miniTitle">Your Plan</h3>
+                <p class="miniMuted" id="planMeta">No plan yet. Build one to start.</p>
+              </div>
+              <button id="planCopyBtn" class="btn" type="button">Copy</button>
+            </div>
+
+            <div id="planEcoSummary" class="ecoSummary" style="display:none;">
+              <div class="ecoSummaryBox">
+                <div class="miniMuted">Eco completed today</div>
+                <div class="ecoSummaryVal" id="planEcoCompleted">0.0 kg (0)</div>
+              </div>
+              <div class="ecoSummaryBox">
+                <div class="miniMuted">Eco potential today</div>
+                <div class="ecoSummaryVal" id="planEcoPotential">0.0 kg (0)</div>
+              </div>
+            </div>
 
             <div id="planSchedule" class="planSchedule"></div>
 
@@ -387,11 +493,8 @@ Grocery run — 30 min"></textarea>
           </div>
         </div>
       </div>
-      <div class="actions" id="sharedActions">
-        <button id="exampleBtn" class="btn secondary">Example</button>
-        <button id="generateBtn" class="btn primary">Generate</button>
-        <button id="copyBtn" class="btn">Copy Output</button>
-      </div>
+
+      <!-- NORMAL OUTPUT -->
       <div id="normalOutput" class="output">
         <div class="riskRow">
           <span class="riskLabel">Risk:</span>
@@ -413,6 +516,8 @@ Grocery run — 30 min"></textarea>
 
     </section>
   </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>
