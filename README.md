@@ -10,8 +10,6 @@ API Integration: Gemini API
 
 CivicClear is a civic and environmental  support platform built for anyone who may have struggles in their life or just want to help out the community, fostering a more unified world. People regularly face  important life decisions involving housing, finances, safety, and sustainability. CivicClear was created to reduce confusion, increase accessibility, and encourage responsible civic and environmental engagement.
 
-This project was built to improve clarity, safety, and community impact on campus by helping students understand information quickly and act with confidence.
-
 Team Members:  
 [Dharshini Senthil Nathan] – dharsen@udel.edu  
 [Jenny Zheng] – zjenny@udel.edu  
