@@ -14,8 +14,6 @@ app.post("/api/gemini", async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "Missing GEMINI_API_KEY in server/.env" });
-
-    // ✅ Model confirmed available for your key (from ListModels)
     const model = "gemini-2.5-flash";
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
