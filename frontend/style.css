@@ -264,7 +264,6 @@ ul, ol{ margin-top: 6px; }
   font-weight:600;
 }
 
-/* ===== Tooltip ===== */
 .tipWrap{
   position:relative;
   display:inline-block;
@@ -318,7 +317,7 @@ ul, ol{ margin-top: 6px; }
   margin:14px 0;
 }
 
-/* ===== Eco Score Page Layout ===== */
+
 .ecoLayout{
   display:grid;
   grid-template-columns: 1fr 1.2fr;
@@ -436,10 +435,10 @@ ul, ol{ margin-top: 6px; }
   color:#cfd8ff;
 }
 
-/* ===== Panels ===== */
+
 .panelSection{ margin-top: 10px; }
 
-/* ===== Impact Simulator ===== */
+
 .impactResultGrid{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -456,7 +455,7 @@ ul, ol{ margin-top: 6px; }
   padding:10px;
 }
 
-/* ===== Lists ===== */
+
 .listNice{
   list-style:none;
   padding-left:0;
@@ -511,7 +510,6 @@ ul, ol{ margin-top: 6px; }
   color:#aaa;
 }
 
-/* ===== Planner ===== */
 .planSchedule{
   display:grid;
   gap:10px;
