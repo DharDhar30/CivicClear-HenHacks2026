@@ -25,26 +25,26 @@
 
   <main class="container">
     <section class="card">
+
       <div class="tabs" aria-label="Features">
-        <!-- Labels are renamed for hackathon UX; data-tab stays the same for your JS -->
         <button class="tab active" data-tab="guidance">Home</button>
         <button class="tab" data-tab="carbon">Eco Score</button>
-        <button class="tab" data-tab="emergency">Impact Simulator</button>
+        <button class="tab" data-tab="impact">Impact Simulator</button>
         <button class="tab" data-tab="resources">Resources</button>
         <button class="tab" data-tab="planner">Action Planner</button>
       </div>
 
-      <h2 id="panelTitle">Civic Text Guidance</h2>
+      <h2 id="panelTitle">Home & Civic Guidance</h2>
 
       <!-- HOME DASHBOARD (shows only on guidance tab) -->
       <div id="homeDash" class="homeDash">
         <div class="homeTop">
           <div class="pill" id="ecoPill">
-            Eco Score: <span id="ecoScoreNum">82</span> 🌱
+            Eco Score: <span id="ecoScoreNum">50</span> 🌱
             <span class="tipWrap">
               <button class="tipIcon" type="button" aria-label="Eco score info">?</button>
               <span class="tipText">
-                Eco Score is a simple habit score. It goes up when you complete quick actions.
+                Eco Score is a simple daily habit score. It goes up when you complete quick actions.
                 Higher score = lower impact today.
               </span>
             </span>
@@ -64,7 +64,7 @@
             <div class="statRow">
               <div class="statBox">
                 <div class="statLabel">Footprint</div>
-                <div class="statValue" id="impactStatus">LOW</div>
+                <div class="statValue" id="impactStatus">MEDIUM</div>
               </div>
               <div class="statBox">
                 <div class="statLabel">Saved</div>
@@ -89,18 +89,320 @@
             <small class="miniMuted" id="qaHint">Tip: Try 1–2 actions/day to build a streak.</small>
           </div>
         </div>
+
+        <div class="sectionDivider"></div>
+
+        <div class="homeGuidanceTeaser">
+          <h3 class="miniTitle">Civic Text Guidance (AI)</h3>
+          <p class="miniMuted">Paste an alert, notice, policy message, or instructions. CivicClear will summarize + suggest actions.</p>
+        </div>
       </div>
 
-      <label class="label" for="userInput">Input</label>
-      <textarea id="userInput" rows="7" placeholder="Paste an alert, policy, or instructions..."></textarea>
+      <!-- ===== GUIDANCE TAB INPUT (AI) ===== -->
+      <div id="guidanceBox" class="panelSection">
+        <label class="label" for="userInput">Input</label>
+        <textarea id="userInput" rows="7" placeholder="Paste an alert, public notice, campus message, policy, or emergency instructions..."></textarea>
+      </div>
 
-      <div class="actions">
+      <!-- ===== ECO SCORE TAB ===== -->
+      <div id="ecoLayout" class="ecoLayout" style="display:none;">
+
+        <div class="ecoLeft">
+          <div class="ecoForm">
+
+            <div class="ecoRow">
+              <div class="ecoField">
+                <label class="label">Commute Type</label>
+                <select id="ecoCommute" class="ecoSelect">
+                  <option value="walk">Walk / Bike</option>
+                  <option value="bus">Bus / Public Transit</option>
+                  <option value="car" selected>Car</option>
+                  <option value="rideshare">Uber / Rideshare</option>
+                </select>
+              </div>
+
+              <div class="ecoField">
+                <label class="label">Miles Today</label>
+                <input id="ecoMiles" class="ecoInput" type="number" min="0" step="1" value="0" />
+              </div>
+            </div>
+
+            <label class="ecoCheck" style="margin-top:10px;">
+              <input type="checkbox" id="ecoCarpool" />
+              Carpooled / shared ride today
+            </label>
+
+            <label class="label" style="margin-top:12px;">Food</label>
+            <select id="ecoDiet" class="ecoSelect">
+              <option value="vegan">Vegan</option>
+              <option value="vegetarian">Vegetarian</option>
+              <option value="mixed" selected>Mixed</option>
+              <option value="heavyMeat">Heavy meat</option>
+            </select>
+
+            <label class="label" style="margin-top:12px;">Consumption</label>
+            <select id="ecoShopping" class="ecoSelect">
+              <option value="none">No shopping today</option>
+              <option value="small" selected>Small (1–2 items)</option>
+              <option value="big">Big (online order / multiple items)</option>
+            </select>
+
+            <label class="label" style="margin-top:12px;">Waste</label>
+            <div class="ecoRow">
+              <div class="ecoField">
+                <label class="label">Recycling/Compost</label>
+                <select id="ecoRecycleHabit" class="ecoSelect">
+                  <option value="always">Always</option>
+                  <option value="sometimes" selected>Sometimes</option>
+                  <option value="rarely">Rarely</option>
+                </select>
+              </div>
+
+              <div class="ecoField">
+                <label class="label">Single-use Plastics</label>
+                <select id="ecoPlastic" class="ecoSelect">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="ecoRight">
+          <div class="ecoOutput">
+            <div class="ecoScoreHeader">
+              <div class="ecoScoreBig">
+                <div class="ecoScoreLabel">Eco Score</div>
+                <div class="ecoScoreValue">
+                  <span id="ecoScoreBigNum">—</span><span class="ecoScoreSmall">/100</span>
+                </div>
+                <div class="ecoScoreRating" id="ecoScoreRating">Fill inputs and click Calculate</div>
+              </div>
+            </div>
+
+            <h3>Breakdown</h3>
+            <ul id="ecoKeyPointsList"></ul>
+
+            <h3>Suggestions</h3>
+            <ol id="ecoActionsList"></ol>
+
+            <h3>Accessible Summary</h3>
+            <p id="ecoAccessibleText" class="muted"></p>
+
+            <div class="ecoHistoryBox">
+              <h3>Eco Score History</h3>
+              <p class="muted" id="ecoStatsText"></p>
+              <ul id="ecoHistoryList"></ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== IMPACT SIMULATOR TAB ===== -->
+      <div id="impactBox" class="panelSection" style="display:none;">
+        <div class="grid2">
+          <div class="miniCard">
+            <h3 class="miniTitle">Choose an action</h3>
+            <p class="miniMuted">Simulate impact and save a quick “what-if” record.</p>
+
+            <label class="label">Action</label>
+            <select id="impactAction" class="ecoSelect">
+              <option value="drive_less">🚗 Reduce driving</option>
+              <option value="transit_more">🚌 Use public transit</option>
+              <option value="energy">💡 Reduce home energy</option>
+              <option value="meatless">🥗 1 meatless day/week</option>
+              <option value="reusable">🥤 Use a reusable bottle</option>
+              <option value="recycle">♻️ Improve recycling</option>
+            </select>
+
+            <div class="ecoRow" style="margin-top:12px;">
+              <div class="ecoField">
+                <label class="label">Intensity</label>
+                <select id="impactIntensity" class="ecoSelect">
+                  <option value="light">Light</option>
+                  <option value="moderate" selected>Moderate</option>
+                  <option value="strong">Strong</option>
+                </select>
+              </div>
+
+              <div class="ecoField">
+                <label class="label">Weeks</label>
+                <input id="impactWeeks" class="ecoInput" type="number" min="1" step="1" value="4" />
+              </div>
+            </div>
+
+            <label class="ecoCheck" style="margin-top:12px;">
+              <input type="checkbox" id="impactSaveToHome" checked />
+              Also count this toward Today’s Impact snapshot
+            </label>
+
+            <div class="actions" style="margin-top:12px;">
+              <button id="impactRunBtn" class="btn primary">Simulate</button>
+              <button id="impactClearBtn" class="btn secondary">Clear</button>
+            </div>
+          </div>
+
+          <div class="miniCard">
+            <h3 class="miniTitle">Results</h3>
+            <p class="miniMuted">A realistic estimate (good for demo + planning).</p>
+
+            <div class="impactResultGrid">
+              <div class="impactMetric">
+                <div class="statLabel">CO₂ Reduced</div>
+                <div class="statValue" id="impactCO2">—</div>
+                <div class="miniMuted" id="impactCO2Note"></div>
+              </div>
+
+              <div class="impactMetric">
+                <div class="statLabel">Money Saved</div>
+                <div class="statValue" id="impactMoney">—</div>
+                <div class="miniMuted" id="impactMoneyNote"></div>
+              </div>
+
+              <div class="impactMetric">
+                <div class="statLabel">Equivalents</div>
+                <div class="statValue" id="impactEquiv">—</div>
+                <div class="miniMuted">Phone charges / tree-months</div>
+              </div>
+
+              <div class="impactMetric">
+                <div class="statLabel">Impact Score</div>
+                <div class="statValue" id="impactScore">—</div>
+                <div class="miniMuted">Higher = better</div>
+              </div>
+            </div>
+
+            <div class="sectionDivider"></div>
+
+            <h3 class="miniTitle">Recent Simulations</h3>
+            <p class="miniMuted" id="impactHistoryStats">No simulations yet.</p>
+            <ul id="impactHistoryList" class="listNice"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RESOURCES TAB ===== -->
+      <div id="resourcesBox" class="panelSection" style="display:none;">
+        <div class="grid2">
+          <div class="miniCard">
+            <h3 class="miniTitle">What do you need help with?</h3>
+            <p class="miniMuted">CivicClear will suggest steps + trustworthy starting points.</p>
+
+            <label class="label">Category</label>
+            <select id="resCategory" class="ecoSelect">
+              <option value="housing">🏠 Housing / Rent</option>
+              <option value="food">🥫 Food / SNAP</option>
+              <option value="health">🩺 Health / Mental health</option>
+              <option value="legal">⚖️ Legal / Benefits</option>
+              <option value="jobs">💼 Work / Job issues</option>
+              <option value="emergency">🚨 Emergency / Shelter</option>
+            </select>
+
+            <label class="label" style="margin-top:12px;">Where are you (state or city)?</label>
+            <input id="resLocation" class="ecoInput" type="text" placeholder="Example: Newark, DE" />
+
+            <label class="label" style="margin-top:12px;">Details (optional)</label>
+            <textarea id="resDetails" rows="5" placeholder="Example: behind on rent, need food for this week, lost job, need shelter..."></textarea>
+
+            <div class="actions">
+              <button id="resGenerateBtn" class="btn primary">Generate</button>
+              <button id="resExampleBtn" class="btn secondary">Example</button>
+            </div>
+          </div>
+
+          <div class="miniCard">
+            <h3 class="miniTitle">Resource Plan</h3>
+            <p class="miniMuted">Clear steps + links you can click right now.</p>
+
+            <div class="resourceLinks" id="resLinks"></div>
+
+            <div class="sectionDivider"></div>
+
+            <h3 class="miniTitle">Checklist</h3>
+            <ul id="resChecklist" class="listNice"></ul>
+
+            <div class="sectionDivider"></div>
+
+            <h3 class="miniTitle">Plain Summary</h3>
+            <p id="resPlain" class="muted">Your resource plan will appear here.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ACTION PLANNER TAB ===== -->
+      <div id="plannerBox" class="panelSection" style="display:none;">
+        <div class="grid2">
+          <div class="miniCard">
+            <h3 class="miniTitle">Action Planner</h3>
+            <p class="miniMuted">Turn messy tasks into a clean plan you can check off.</p>
+
+            <label class="label">Tasks (one per line)</label>
+            <textarea id="planTasks" rows="7" placeholder="Example:
+Lab report — due Fri
+Quiz study — Wed
+Work shift — Thu 5–9pm
+Grocery run — 30 min"></textarea>
+
+            <div class="ecoRow" style="margin-top:12px;">
+              <div class="ecoField">
+                <label class="label">Time Available / day</label>
+                <select id="planTime" class="ecoSelect">
+                  <option value="60">1 hour</option>
+                  <option value="90" selected>1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                </select>
+              </div>
+              <div class="ecoField">
+                <label class="label">Plan Days</label>
+                <select id="planDays" class="ecoSelect">
+                  <option value="3">Next 3 days</option>
+                  <option value="5" selected>Next 5 days</option>
+                  <option value="7">Next 7 days</option>
+                </select>
+              </div>
+            </div>
+
+            <label class="ecoCheck" style="margin-top:12px;">
+              <input type="checkbox" id="planSave" checked />
+              Save this plan (per user)
+            </label>
+
+            <div class="actions">
+              <button id="planGenerateBtn" class="btn primary">Build Plan</button>
+              <button id="planLoadBtn" class="btn secondary">Load Saved</button>
+              <button id="planClearBtn" class="btn">Clear</button>
+            </div>
+          </div>
+
+          <div class="miniCard">
+            <h3 class="miniTitle">Your Plan</h3>
+            <p class="miniMuted" id="planMeta">No plan yet. Build one to start.</p>
+
+            <div id="planSchedule" class="planSchedule"></div>
+
+            <div class="sectionDivider"></div>
+
+            <h3 class="miniTitle">Today Focus</h3>
+            <p class="miniMuted">Pick 1–2 items to finish today.</p>
+            <ul id="planToday" class="listNice"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Shared buttons (Guidance+Eco only) ===== -->
+      <div class="actions" id="sharedActions">
         <button id="exampleBtn" class="btn secondary">Example</button>
         <button id="generateBtn" class="btn primary">Generate</button>
         <button id="copyBtn" class="btn">Copy Output</button>
       </div>
 
-      <div class="output">
+      <!-- ===== NORMAL OUTPUT (Guidance only) ===== -->
+      <div id="normalOutput" class="output">
         <div class="riskRow">
           <span class="riskLabel">Risk:</span>
           <span id="riskBadge" class="badge low">Low</span>
@@ -118,6 +420,7 @@
         <h3>Accessible Version</h3>
         <p id="accessibleText" class="muted"></p>
       </div>
+
     </section>
   </main>
 
