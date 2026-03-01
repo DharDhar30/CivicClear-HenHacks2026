@@ -3,7 +3,27 @@ if (!currentUser) {
   window.location.href = "login_signup/login.html";
 }
 
+// ===== Per-user storage helpers =====
+function userKey(suffix) {
+  // Safe key format in case username has spaces
+  const u = encodeURIComponent(currentUser || "unknown");
+  return `civicclear_user_${u}_${suffix}`;
+}
 
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJSON(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+// ===== Welcome + Logout =====
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -72,6 +92,10 @@ function setActiveTab(tabName) {
   panelTitle.textContent = titles[tabName];
   userInput.value = "";
   clearOutput();
+
+  // show dashboard only on guidance tab
+  const homeDash = document.getElementById("homeDash");
+  if (homeDash) homeDash.style.display = (tabName === "guidance") ? "block" : "none";
 }
 
 function renderResult(result) {
@@ -268,4 +292,180 @@ copyBtn.addEventListener("click", function() {
 
 });
 
+// ===== Home Dashboard (Eco Score + Quick Actions) — PER USER =====
+const ecoScoreNum = document.getElementById("ecoScoreNum");
+const streakNum = document.getElementById("streakNum");
+const lastActiveText = document.getElementById("lastActiveText");
+const impactStatus = document.getElementById("impactStatus");
+const impactSaved = document.getElementById("impactSaved");
+const impactEquivalent = document.getElementById("impactEquivalent");
+
+// Choose your default for brand-new users:
+const DEFAULT_ECO_SCORE = 50;
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatLastActive(ymd) {
+  if (!ymd) return "Never";
+  const [y, m, d] = ymd.split("-").map(Number);
+  const dt = new Date(y, (m - 1), d);
+  return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" }); // e.g., "Feb 28"
+}
+
+// Load user-specific saved values (or defaults if new user)
+let ecoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || String(DEFAULT_ECO_SCORE), 10);
+let streak = parseInt(localStorage.getItem(userKey("streak")) || "0", 10);
+let lastActionDay = localStorage.getItem(userKey("lastActionDay")) || "";
+
+// ✅ Auto-expire streak on login/load (if user missed days)
+if (lastActionDay) {
+  const last = new Date(lastActionDay);
+  const now = new Date(todayKey());
+  const diffDays = Math.round((now - last) / (1000 * 60 * 60 * 24));
+  if (diffDays > 1) {
+    streak = 0;
+    localStorage.setItem(userKey("streak"), "0");
+  }
+}
+
+// Track today's actions PER USER
+let doneToday = loadJSON(userKey("doneToday"), { date: todayKey(), actions: {} });
+if (doneToday.date !== todayKey()) {
+  doneToday = { date: todayKey(), actions: {} };
+  saveJSON(userKey("doneToday"), doneToday);
+}
+
+// Render initial UI
+ecoScoreNum.textContent = ecoScore;
+streakNum.textContent = streak;
+if (lastActiveText) lastActiveText.textContent = formatLastActive(lastActionDay);
+
+function refreshQuickButtons() {
+  document.querySelectorAll(".qaBtn").forEach(btn => {
+    const action = btn.dataset.action;
+    const done = !!doneToday.actions[action];
+    btn.disabled = done;
+    btn.textContent = (done ? "✅ " : "") + btn.textContent.replace(/^✅\s*/, "");
+  });
+}
+
+function computeTodaySavedKg() {
+  const savings = {
+    bus: 1.8,
+    bottle: 0.1,
+    veg: 1.2,
+    lights: 0.3
+  };
+
+  let saved = 0;
+  for (const [action, isDone] of Object.entries(doneToday.actions || {})) {
+    if (isDone && savings[action]) saved += savings[action];
+  }
+  return saved;
+}
+
+function setFootprintColor(level) {
+  impactStatus.style.fontWeight = "900";
+  if (level === "High") impactStatus.style.color = "#e74c3c";
+  else if (level === "Medium") impactStatus.style.color = "#f1c40f";
+  else impactStatus.style.color = "#2ecc71";
+}
+
+function updateImpactSnapshot() {
+  const BASELINE = 5.0;
+
+  const saved = computeTodaySavedKg();
+  const footprint = Math.max(0, BASELINE - saved);
+
+  let level = "Medium";
+  if (footprint >= 4.0) level = "High";
+  else if (footprint >= 2.5) level = "Medium";
+  else level = "Low";
+
+  impactStatus.textContent = level;
+  setFootprintColor(level);
+
+  impactSaved.textContent = `+${saved.toFixed(1)} kg CO₂`;
+  const phones = Math.max(0, Math.round(saved * 80));
+  impactEquivalent.textContent = `≈ Charging ${phones} phones`;
+}
+
+function persistDashboard() {
+  localStorage.setItem(userKey("ecoScore"), String(ecoScore));
+  localStorage.setItem(userKey("streak"), String(streak));
+  localStorage.setItem(userKey("lastActionDay"), lastActionDay);
+  saveJSON(userKey("doneToday"), doneToday);
+}
+
+refreshQuickButtons();
+updateImpactSnapshot();
+
+// Handle quick action taps
+document.querySelectorAll(".qaBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const action = btn.dataset.action;
+    if (doneToday.actions[action]) return;
+
+    // Mark done today
+    doneToday.actions[action] = true;
+
+    // Score bump based on action type
+    const scoreBumps = { bus: 3, bottle: 1, veg: 2, lights: 1 };
+    ecoScore += (scoreBumps[action] || 1);
+    ecoScoreNum.textContent = ecoScore;
+
+    // Streak update: only counts if it’s the first action of the day
+    const today = todayKey();
+    if (lastActionDay !== today) {
+      const last = lastActionDay ? new Date(lastActionDay) : null;
+      const now = new Date(today);
+      const diffDays = last ? Math.round((now - last) / (1000 * 60 * 60 * 24)) : 999;
+
+      streak = (diffDays === 1) ? (streak + 1) : 1;
+      streakNum.textContent = streak;
+    }
+
+    // Always update last active when an action is taken
+    lastActionDay = today;
+    if (lastActiveText) lastActiveText.textContent = formatLastActive(lastActionDay);
+
+    // Save everything per user
+    persistDashboard();
+
+    // Refresh UI
+    refreshQuickButtons();
+    updateImpactSnapshot();
+  });
+});
+
+// ===== Start =====
 setActiveTab("guidance");
+
+// ===== Tooltip mobile support =====
+document.querySelectorAll(".tipIcon").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const tip = btn.parentElement.querySelector(".tipText");
+    if (!tip) return;
+
+    const isOpen = tip.style.opacity === "1";
+    tip.style.opacity = isOpen ? "0" : "1";
+    tip.style.transform = isOpen ? "translateY(-4px)" : "translateY(0)";
+    tip.style.pointerEvents = isOpen ? "none" : "auto";
+  });
+});
+
+document.addEventListener("click", (e) => {
+  if (e.target.classList && e.target.classList.contains("tipIcon")) return;
+
+  document.querySelectorAll(".tipText").forEach(tip => {
+    tip.style.opacity = "0";
+    tip.style.transform = "translateY(-4px)";
+    tip.style.pointerEvents = "none";
+  });
+});
