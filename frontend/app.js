@@ -1,8 +1,8 @@
-// ===== Login Guard =====
+
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) window.location.href = "login_signup/login.html?expired=1";
 
-// ===== Storage helpers (per user) =====
+
 function userKey(suffix) {
   const u = encodeURIComponent(currentUser || "unknown");
   return `civicclear_user_${u}_${suffix}`;
@@ -19,7 +19,6 @@ function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// ===== Toast =====
 const toastEl = document.getElementById("toast");
 let toastTimer = null;
 function toast(msg) {
@@ -30,7 +29,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1600);
 }
 
-// ===== Dates (local-safe) =====
+
 function ymdToday() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -54,14 +53,14 @@ function diffDaysYMD(aYmd, bYmd) {
   return Math.round(ms / (1000 * 60 * 60 * 24));
 }
 
-// ===== Welcome + Logout =====
+
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem("civicclear_current_user");
   window.location.href = "login_signup/login.html";
 });
 
-// ===== DOM =====
+
 const tabs = document.querySelectorAll(".tab");
 const panelTitle = document.getElementById("panelTitle");
 
@@ -189,7 +188,7 @@ const examples = {
     "EMERGENCY ALERT: Severe thunderstorm warning for Newark, DE until 8:30 PM. Winds may exceed 60 mph. Heavy rain and flash flooding possible. Avoid windows and do not drive through flooded roads."
 };
 
-// ===== Activity + streak rules =====
+
 const DEFAULT_ECO_SCORE = 50;
 let homeEcoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || String(DEFAULT_ECO_SCORE), 10);
 let streak = parseInt(localStorage.getItem(userKey("streak")) || "0", 10);
@@ -221,7 +220,7 @@ function markActiveToday() {
 }
 refreshHomeNumbers();
 
-// ===== Today state normalization =====
+
 function ensureTodayObject(key, fallback) {
   const obj = loadJSON(key, fallback);
   if (!obj || obj.date !== ymdToday()) return { ...fallback, date: ymdToday() };
@@ -232,7 +231,7 @@ function ensureTodayObject(key, fallback) {
 let doneToday = ensureTodayObject(userKey("doneToday"), { date: ymdToday(), actions: {} });
 saveJSON(userKey("doneToday"), doneToday);
 
-// ===== Planner eco-to-home preference (persists) =====
+
 function loadPlannerEcoToHomePref() {
   const pref = localStorage.getItem(userKey("plannerEcoToHomePref"));
   return pref === null ? true : (pref === "true");
@@ -253,12 +252,11 @@ function refreshQuickButtons() {
   });
 }
 
-// ===== REAL impact model (trustworthy) =====
 function loadPlannerSaved() {
   return loadJSON(userKey("plannerSaved"), null);
 }
 
-// Quick action savings: modest, believable
+
 function computeQuickActionSavings() {
   const savings = { bus: 0.6, bottle: 0.1, veg: 0.5, lights: 0.3 }; // kg CO2 estimate
   let kg = 0;
@@ -357,11 +355,11 @@ function resetToday() {
   refreshQuickButtons();
   updateImpactSnapshot();
   renderPlannerFromSavedIfAny();
-  toast("Reset today ✅");
+  toast("Reset today ");
 }
 resetTodayBtn?.addEventListener("click", resetToday);
 
-// ===== Quick actions -> update eco score + streak =====
+
 document.querySelectorAll(".qaBtn").forEach(btn => {
   btn.addEventListener("click", () => {
     const action = btn.dataset.action;
@@ -379,7 +377,7 @@ document.querySelectorAll(".qaBtn").forEach(btn => {
 
     refreshQuickButtons();
     updateImpactSnapshot();
-    toast("Logged ✅");
+    toast("Logged ");
   });
 });
 
@@ -416,7 +414,7 @@ document.addEventListener("click", (e) => {
   });
 });
 
-// ===== Tab switching =====
+
 function setActiveTab(tabName) {
   currentTab = tabName;
   tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
@@ -479,7 +477,7 @@ function renderNormalResult(result) {
   accessibleText.textContent = result.accessible || "";
 }
 
-// ===== Gemini Guidance (ONLY for guidance tab) =====
+
 async function generateGuidanceWithGemini(userText) {
   const prompt = `
 You are CivicClear, an AI civic assistant.
@@ -1561,7 +1559,7 @@ planCopyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
-// ===== Start & Tab events =====
+
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
 clearNormalOutput();
