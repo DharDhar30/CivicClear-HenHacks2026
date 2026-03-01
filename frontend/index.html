@@ -1,3 +1,6 @@
+<!-- =========================
+File: index.html
+========================= -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,11 +73,11 @@
             <div class="statRow">
               <div class="statBox">
                 <div class="statLabel">
-                  Impact Level
+                  Climate Risk Today
                   <span class="tipWrap">
                     <button class="tipIcon" type="button" aria-label="Impact level info">?</button>
                     <span class="tipText">
-                      This rating is based on real completed eco actions today (not forecasts).
+                      This rating is based on real completed eco actions today (not forecasts). More completed actions lowers your “risk today”.
                     </span>
                   </span>
                 </div>
@@ -149,13 +152,15 @@
                   <option value="walk">Walk / Bike</option>
                   <option value="bus">Bus / Public Transit</option>
                   <option value="car" selected>Car</option>
-                  <option value="rideshare">Uber / Rideshare</option>
+                  <option value="rideshare">Rideshare (Uber/Lyft)</option>
                 </select>
+                <div class="fieldHelp">Pick what you used most today.</div>
               </div>
 
               <div class="ecoField">
                 <label class="label">Miles Today</label>
                 <input id="ecoMiles" class="ecoInput" type="number" min="0" step="1" value="0" />
+                <div class="fieldHelp">Only count the miles for your main commute type.</div>
               </div>
             </div>
 
@@ -163,40 +168,47 @@
               <input type="checkbox" id="ecoCarpool" />
               Carpooled / shared ride today
             </label>
+            <div class="fieldHelp" style="margin-top:6px;">
+              This is <strong>not</strong> “rideshare.” It means you shared a car ride with someone.
+            </div>
 
             <label class="label" style="margin-top:12px;">Food</label>
             <select id="ecoDiet" class="ecoSelect">
               <option value="vegan">Vegan</option>
               <option value="vegetarian">Vegetarian</option>
-              <option value="mixed" selected>Mixed</option>
-              <option value="heavyMeat">Heavy meat</option>
+              <option value="mixed" selected>Mixed (some meat)</option>
+              <option value="heavyMeat">Heavy meat (multiple meat meals)</option>
             </select>
+            <div class="fieldHelp">Simple estimate: more meat = higher footprint.</div>
 
-            <label class="label" style="margin-top:12px;">Consumption</label>
+            <label class="label" style="margin-top:12px;">Shopping today</label>
             <select id="ecoShopping" class="ecoSelect">
-              <option value="none">No shopping today</option>
+              <option value="none">None</option>
               <option value="small" selected>Small (1–2 items)</option>
-              <option value="big">Big (online order / multiple items)</option>
+              <option value="big">Big (multiple items / online order)</option>
             </select>
+            <div class="fieldHelp">This is just a quick habit proxy (not a full audit).</div>
 
-            <label class="label" style="margin-top:12px;">Waste</label>
+            <label class="label" style="margin-top:12px;">Waste & Packaging</label>
             <div class="ecoRow">
               <div class="ecoField">
-                <label class="label">Recycling/Compost</label>
+                <label class="label">Recycling / Compost</label>
                 <select id="ecoRecycleHabit" class="ecoSelect">
                   <option value="always">Always</option>
                   <option value="sometimes" selected>Sometimes</option>
                   <option value="rarely">Rarely</option>
                 </select>
+                <div class="fieldHelp">How consistently you sorted waste today.</div>
               </div>
 
               <div class="ecoField">
-                <label class="label">Single-use Plastics</label>
+                <label class="label">Single-use items</label>
                 <select id="ecoPlastic" class="ecoSelect">
-                  <option value="low">Low</option>
-                  <option value="medium" selected>Medium</option>
-                  <option value="high">High</option>
+                  <option value="low">Low (0–1)</option>
+                  <option value="medium" selected>Medium (2–4)</option>
+                  <option value="high">High (5+)</option>
                 </select>
+                <div class="fieldHelp">Bags, bottles, cups, wrappers, disposable utensils.</div>
               </div>
             </div>
 
@@ -231,7 +243,15 @@
             <h3>Suggestions</h3>
             <ol id="ecoActionsList"></ol>
 
-            <h3>Accessible Summary</h3>
+            <h3>
+              Plain-language summary
+              <span class="tipWrap">
+                <button class="tipIcon" type="button" aria-label="Plain language info">?</button>
+                <span class="tipText">
+                  This section is written in simple, clear language for accessibility (easy to read aloud or copy).
+                </span>
+              </span>
+            </h3>
             <p id="ecoAccessibleText" class="muted"></p>
 
             <div class="ecoHistoryBox">
@@ -306,7 +326,16 @@
               </div>
 
               <div class="impactMetric">
-                <div class="statLabel">Equivalents</div>
+                <div class="statLabel">
+                  Equivalents
+                  <span class="tipWrap">
+                    <button class="tipIcon" type="button" aria-label="Equivalents info">?</button>
+                    <span class="tipText">
+                      “Tree-months” = a simple comparison: about how much CO₂ one mature tree might absorb in one month.
+                      It’s a rough, friendly equivalent (not scientific).
+                    </span>
+                  </span>
+                </div>
                 <div class="statValue" id="impactEquiv">—</div>
                 <div class="miniMuted">Fun equivalents (not scientific)</div>
               </div>
@@ -333,12 +362,12 @@
         </div>
       </div>
 
-      <!-- RESOURCES -->
+      <!-- RESOURCES (LINKS ONLY) -->
       <div id="resourcesBox" class="panelSection" style="display:none;">
         <div class="grid2">
           <div class="miniCard">
-            <h3 class="miniTitle">What do you need help with?</h3>
-            <p class="miniMuted">Clear steps + trustworthy starting points.</p>
+            <h3 class="miniTitle">Resources (quick links)</h3>
+            <p class="miniMuted">Pick a category and city/state. We’ll show trusted links + local search shortcuts.</p>
 
             <label class="label">Category</label>
             <select id="resCategory" class="ecoSelect">
@@ -350,28 +379,23 @@
               <option value="emergency">🚨 Emergency / Shelter</option>
             </select>
 
-            <label class="label" style="margin-top:12px;">Where are you (city, state)?</label>
+            <label class="label" style="margin-top:12px;">City, State (optional)</label>
             <input id="resLocation" class="ecoInput" type="text" placeholder="Example: Newark, DE" />
+            <div class="fieldHelp">Used only to generate map/search links.</div>
 
-            <label class="label" style="margin-top:12px;">Details (optional)</label>
-            <textarea id="resDetails" rows="5" placeholder="Example: behind on rent, eviction notice, need food this week, job scam..."></textarea>
-
-            <div class="actions">
-              <button id="resGenerateBtn" class="btn primary">Build Plan</button>
-              <button id="resExampleBtn" class="btn secondary">Example</button>
+            <div class="actions" style="margin-top:12px;">
+              <button id="resShowBtn" class="btn primary">Show Links</button>
+              <button id="resClearBtn" class="btn">Clear</button>
             </div>
 
-            <p class="miniMuted" style="margin-top:10px;">
-              Privacy note: your location is not stored—it's only used to build map/search links.
-            </p>
             <div class="miniMuted" id="resStatus" aria-live="polite"></div>
           </div>
 
           <div class="miniCard">
             <div class="rowBetween">
               <div>
-                <h3 class="miniTitle">Resource Plan</h3>
-                <p class="miniMuted">Clear steps + links you can click right now.</p>
+                <h3 class="miniTitle">Trusted links</h3>
+                <p class="miniMuted">Click to open. Local links appear when city/state is filled in.</p>
               </div>
               <button id="resCopyBtn" class="btn" type="button">Copy</button>
             </div>
@@ -379,70 +403,47 @@
             <div class="resourceLinks" id="resLinks"></div>
 
             <div class="sectionDivider"></div>
-
-            <h3 class="miniTitle">Checklist</h3>
-            <ul id="resChecklist" class="listNice"></ul>
-
-            <div class="sectionDivider"></div>
-
-            <h3 class="miniTitle">Plain Summary</h3>
-            <p id="resPlain" class="muted">Your resource plan will appear here.</p>
+            <h3 class="miniTitle">Fast starting step</h3>
+            <p id="resPlain" class="muted">
+              Start with <strong>2-1-1</strong> for local referrals. Then use the links above for official programs.
+            </p>
           </div>
         </div>
       </div>
 
-      <!-- PLANNER -->
+      <!-- PLANNER (SIMPLIFIED + RELIABLE) -->
       <div id="plannerBox" class="panelSection" style="display:none;">
         <div class="grid2">
           <div class="miniCard">
             <h3 class="miniTitle">Action Planner</h3>
-            <p class="miniMuted">Turn messy tasks into a clean plan you can check off.</p>
+            <p class="miniMuted">Paste tasks → we fill Today first, then put the rest in Next Up.</p>
 
             <label class="label">Tasks (one per line)</label>
             <textarea id="planTasks" rows="7" placeholder="Example:
-Bus to campus — Mon
+Bus to campus
 Study for quiz — Wed 60 min
-Work shift — Thu 5–9pm
+Work shift — 5–9pm
 Reusable bottle
 Meatless dinner"></textarea>
 
             <div class="ecoRow" style="margin-top:12px;">
               <div class="ecoField">
-                <label class="label">Mode</label>
-                <select id="planMode" class="ecoSelect">
-                  <option value="productivity" selected>📚 Productivity</option>
-                  <option value="eco">🌱 Eco Habits</option>
-                  <option value="mixed">🧩 Mixed</option>
-                </select>
-              </div>
-
-              <div class="ecoField">
                 <label class="label">Time Available / day</label>
                 <select id="planTime" class="ecoSelect">
                   <option value="60">1 hour</option>
-                  <option value="90" selected>1.5 hours</option>
-                  <option value="120">2 hours</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120" selected>2 hours</option>
                   <option value="180">3 hours</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="ecoRow" style="margin-top:12px;">
-              <div class="ecoField">
-                <label class="label">Plan Days</label>
-                <select id="planDays" class="ecoSelect">
-                  <option value="3">Next 3 days</option>
-                  <option value="5" selected>Next 5 days</option>
-                  <option value="7">Next 7 days</option>
                 </select>
               </div>
 
               <div class="ecoField">
                 <label class="label">Eco Impact</label>
-                <label class="ecoCheck" style="margin-top:6px;">
+                <label class="ecoToggle">
                   <input type="checkbox" id="planEcoToHome" checked />
                   Count completed eco tasks toward Today’s Impact
                 </label>
+                <div class="fieldHelp">Simple toggle (per user).</div>
               </div>
             </div>
 
@@ -458,7 +459,7 @@ Meatless dinner"></textarea>
             </div>
 
             <p class="miniMuted" style="margin-top:10px;">
-              Tips: Include “Mon / Tue / Wed” or “60 min”. Eco tasks like “bus”, “walk”, “recycle”, “meatless” get 🌱 tags.
+              Tip: Add “Mon/Tue/Wed” or “60 min”. Eco keywords (bus, walk, recycle, meatless, bottle, lights) get 🌱 tags.
             </p>
             <div class="miniMuted" id="planStatus" aria-live="polite"></div>
           </div>
@@ -483,13 +484,27 @@ Meatless dinner"></textarea>
               </div>
             </div>
 
-            <div id="planSchedule" class="planSchedule"></div>
+            <div class="planSplit">
+              <div class="planColumn">
+                <h3 class="miniTitle">Today</h3>
+                <p class="miniMuted">Check items as you complete them.</p>
+                <div id="planTodayList" class="planList"></div>
+              </div>
+
+              <div class="sectionDivider"></div>
+
+              <div class="planColumn">
+                <h3 class="miniTitle">Next Up</h3>
+                <p class="miniMuted">Backlog items (don’t count until moved into Today by rebuilding).</p>
+                <div id="planNextList" class="planList"></div>
+              </div>
+            </div>
 
             <div class="sectionDivider"></div>
 
             <h3 class="miniTitle">Today Focus</h3>
             <p class="miniMuted">Pick 1–2 items to finish today.</p>
-            <ul id="planToday" class="listNice"></ul>
+            <ul id="planTodayFocus" class="listNice"></ul>
           </div>
         </div>
       </div>

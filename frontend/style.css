@@ -1,3 +1,7 @@
+/* =========================
+File: style.css
+========================= */
+
 * { box-sizing: border-box; }
 
 body{
@@ -74,6 +78,13 @@ h2{ margin: 10px 0 10px; }
   display:block;
   margin:10px 0 6px;
   color:#aaa;
+}
+
+.fieldHelp{
+  margin-top:6px;
+  font-size:12px;
+  color:#9fb0d8;
+  opacity:0.9;
 }
 
 textarea{
@@ -281,6 +292,7 @@ ul, ol{ margin-top: 6px; }
   font-weight:600;
 }
 
+/* ===== Tooltip ===== */
 .tipWrap{
   position:relative;
   display:inline-block;
@@ -307,7 +319,7 @@ ul, ol{ margin-top: 6px; }
   position:absolute;
   right:0;
   top:28px;
-  width:260px;
+  width:270px;
   background:#0b1220;
   border:1px solid rgba(255,255,255,0.12);
   border-radius:12px;
@@ -328,7 +340,7 @@ ul, ol{ margin-top: 6px; }
   margin:14px 0;
 }
 
-
+/* ===== Eco Score Page Layout ===== */
 .ecoLayout{
   display:grid;
   grid-template-columns: 1fr 1.2fr;
@@ -384,6 +396,21 @@ ul, ol{ margin-top: 6px; }
   margin-top:8px;
 }
 .ecoCheck input{ transform: scale(1.1); }
+
+/* Smaller toggle style for planner preference */
+.ecoToggle{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:8px 10px;
+  border-radius:10px;
+  background: rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  cursor:pointer;
+  margin-top:6px;
+  font-size:13px;
+}
+.ecoToggle input{ transform: scale(1.05); }
 
 .ecoOutput{
   background:#0b1220;
@@ -446,7 +473,7 @@ ul, ol{ margin-top: 6px; }
   color:#cfd8ff;
 }
 
-
+/* ===== Panels ===== */
 .panelSection{ margin-top: 10px; }
 
 /* ===== Impact Forecast ===== */
@@ -466,7 +493,7 @@ ul, ol{ margin-top: 6px; }
   padding:10px;
 }
 
-
+/* ===== Lists ===== */
 .listNice{
   list-style:none;
   padding-left:0;
@@ -525,48 +552,48 @@ ul, ol{ margin-top: 6px; }
   color:#aaa;
 }
 
-.planSchedule{
-  display:grid;
+/* ===== Planner (Simplified) ===== */
+.planSplit{ margin-top: 10px; }
+.planList{ display:grid; gap:10px; margin-top:10px; }
+.planRow{
+  display:flex;
+  align-items:center;
   gap:10px;
-  margin-top:10px;
-}
-.dayCard{
-  border:1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  border-radius:14px;
   padding:10px;
-}
-.dayHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:8px;
-}
-.dayTitle{
-  font-weight:900;
-  color:#dbe6ff;
-}
-.dayTime{
-  font-size:12px;
-  color:#aaa;
-}
-.taskRow{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px;
   border-radius:12px;
-  background: rgba(0,0,0,0.12);
   border:1px solid rgba(255,255,255,0.08);
-  margin-bottom:8px;
+  background: rgba(255,255,255,0.04);
 }
-.taskRow input{ transform: scale(1.1); }
-.taskText{ flex:1; }
-.taskMeta{
-  font-size:12px;
-  color:#aaa;
-  font-weight:700;
+.planRow input{ transform: scale(1.1); }
+.planText{ flex:1; font-weight:800; color:#dbe6ff; }
+.planMetaRight{ display:flex; gap:8px; align-items:center; }
+.planPills{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.typePill{
+  padding:5px 9px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.16);
+  color:#cfd8ff;
+  font-size:11px;
+  font-weight:900;
+}
+.typePill.eco{
+  background: rgba(79,140,255,0.16);
+  border-color: rgba(79,140,255,0.28);
+}
+.typePill.due{
+  background: rgba(241,196,15,0.12);
+  border-color: rgba(241,196,15,0.25);
+}
+.typePill.pri{
+  background: rgba(231,76,60,0.12);
+  border-color: rgba(231,76,60,0.25);
+}
+.planRow.disabled{
+  opacity:0.75;
+}
+.planRow.disabled input{
+  pointer-events:none;
 }
 
 .ecoSummary{

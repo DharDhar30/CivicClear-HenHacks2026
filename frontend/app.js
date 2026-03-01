@@ -1,4 +1,7 @@
-// app.js
+// =========================
+// File: app.js
+// =========================
+
 // ===== Login Guard =====
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) window.location.href = "login_signup/login.html?expired=1";
@@ -46,13 +49,6 @@ function formatYMD(ymd) {
   const dt = parseYMDLocal(ymd);
   if (!dt) return "—";
   return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-function dayLabelFromOffset(offset) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const name = d.toLocaleDateString(undefined, { weekday: "short" });
-  return { ymd, label: `${name} (${formatYMD(ymd)})` };
 }
 function diffDaysYMD(aYmd, bYmd) {
   const a = parseYMDLocal(aYmd);
@@ -149,25 +145,21 @@ const impactHistoryStats = document.getElementById("impactHistoryStats");
 const impactHistoryList = document.getElementById("impactHistoryList");
 const impactStatusLine = document.getElementById("impactStatusLine");
 
-// Resources DOM
+// Resources DOM (LINKS ONLY)
 const resourcesBox = document.getElementById("resourcesBox");
 const resCategory = document.getElementById("resCategory");
 const resLocation = document.getElementById("resLocation");
-const resDetails = document.getElementById("resDetails");
-const resGenerateBtn = document.getElementById("resGenerateBtn");
-const resExampleBtn = document.getElementById("resExampleBtn");
+const resShowBtn = document.getElementById("resShowBtn");
+const resClearBtn = document.getElementById("resClearBtn");
 const resCopyBtn = document.getElementById("resCopyBtn");
 const resLinks = document.getElementById("resLinks");
-const resChecklist = document.getElementById("resChecklist");
 const resPlain = document.getElementById("resPlain");
 const resStatus = document.getElementById("resStatus");
 
-// Planner DOM
+// Planner DOM (Simplified)
 const plannerBox = document.getElementById("plannerBox");
 const planTasks = document.getElementById("planTasks");
-const planMode = document.getElementById("planMode");
 const planTime = document.getElementById("planTime");
-const planDays = document.getElementById("planDays");
 const planEcoToHome = document.getElementById("planEcoToHome");
 const planSave = document.getElementById("planSave");
 const planGenerateBtn = document.getElementById("planGenerateBtn");
@@ -175,9 +167,9 @@ const planLoadBtn = document.getElementById("planLoadBtn");
 const planClearBtn = document.getElementById("planClearBtn");
 const planCopyBtn = document.getElementById("planCopyBtn");
 const planMeta = document.getElementById("planMeta");
-const planSchedule = document.getElementById("planSchedule");
-const planToday = document.getElementById("planToday");
-const planStatus = document.getElementById("planStatus");
+const planTodayList = document.getElementById("planTodayList");
+const planNextList = document.getElementById("planNextList");
+const planTodayFocus = document.getElementById("planTodayFocus");
 
 // Planner summary cards
 const planEcoSummary = document.getElementById("planEcoSummary");
@@ -215,6 +207,11 @@ function persistDashboardBasics() {
   localStorage.setItem(userKey("streak"), String(streak));
   localStorage.setItem(userKey("lastActionDay"), lastActionDay);
 }
+function refreshHomeNumbers() {
+  if (ecoScoreNum) ecoScoreNum.textContent = String(homeEcoScore);
+  if (streakNum) streakNum.textContent = String(streak);
+  if (lastActiveText) lastActiveText.textContent = formatLastActive(lastActionDay);
+}
 function markActiveToday() {
   const today = ymdToday();
   if (lastActionDay !== today) {
@@ -225,6 +222,7 @@ function markActiveToday() {
   persistDashboardBasics();
   refreshHomeNumbers();
 }
+refreshHomeNumbers();
 
 // ===== Today state normalization =====
 function ensureTodayObject(key, fallback) {
@@ -237,23 +235,6 @@ function ensureTodayObject(key, fallback) {
 let doneToday = ensureTodayObject(userKey("doneToday"), { date: ymdToday(), actions: {} });
 saveJSON(userKey("doneToday"), doneToday);
 
-// ===== Planner eco-to-home preference (persists) =====
-function loadPlannerEcoToHomePref() {
-  const pref = localStorage.getItem(userKey("plannerEcoToHomePref"));
-  return pref === null ? true : (pref === "true");
-}
-function savePlannerEcoToHomePref(v) {
-  localStorage.setItem(userKey("plannerEcoToHomePref"), String(!!v));
-}
-
-// ===== Home UI helpers =====
-function refreshHomeNumbers() {
-  if (ecoScoreNum) ecoScoreNum.textContent = String(homeEcoScore);
-  if (streakNum) streakNum.textContent = String(streak);
-  if (lastActiveText) lastActiveText.textContent = formatLastActive(lastActionDay);
-}
-refreshHomeNumbers();
-
 function refreshQuickButtons() {
   const buttons = document.querySelectorAll(".qaBtn");
   buttons.forEach(button => {
@@ -265,13 +246,16 @@ function refreshQuickButtons() {
   });
 }
 
-// ===== REAL impact model (trustworthy) =====
-// Today’s Impact should ONLY reflect real actions done today:
-// - Quick Actions done today
-// - Planner eco tasks checked today (only if today plan day matches today ymd)
-//
-// It does NOT include forecasts.
+// ===== Planner eco-to-home preference (persists) =====
+function loadPlannerEcoToHomePref() {
+  const pref = localStorage.getItem(userKey("plannerEcoToHomePref"));
+  return pref === null ? true : (pref === "true");
+}
+function savePlannerEcoToHomePref(v) {
+  localStorage.setItem(userKey("plannerEcoToHomePref"), String(!!v));
+}
 
+// ===== REAL impact model (trustworthy) =====
 function loadPlannerSaved() {
   return loadJSON(userKey("plannerSaved"), null);
 }
@@ -292,19 +276,11 @@ function getPlannerEcoStatsToday() {
   if (!pref) return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
 
   const saved = loadPlannerSaved();
-  if (!saved?.days?.length) return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
+  if (!saved?.today?.length) return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
 
-  const todayCard = saved.days[0];
-  if (!todayCard?.items?.length) return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
-
-  // CRITICAL trust fix: only count if the first day is actually today
-  if (todayCard.ymd !== ymdToday()) {
-    return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
-  }
-
-  const ecoItems = todayCard.items.filter(it => it.isEco);
-  const done = ecoItems.filter(it => it.done);
-  const todo = ecoItems.filter(it => !it.done);
+  const eco = saved.today.filter(it => it.isEco);
+  const done = eco.filter(it => it.done);
+  const todo = eco.filter(it => !it.done);
 
   const doneKg = done.reduce((sum, it) => sum + Number(it.ecoKg || 0), 0);
   const todoKg = todo.reduce((sum, it) => sum + Number(it.ecoKg || 0), 0);
@@ -317,7 +293,7 @@ function getPlannerEcoStatsToday() {
   };
 }
 
-function setImpactColor(level) {
+function setRiskColor(level) {
   if (!impactStatus) return;
   impactStatus.style.fontWeight = "900";
   if (level === "High") impactStatus.style.color = "#e74c3c";
@@ -331,24 +307,26 @@ function updateImpactSnapshot() {
   const qa = computeQuickActionSavings();
   const planner = getPlannerEcoStatsToday();
 
-  // REAL saved today
   const savedKg = Number((qa.kg + planner.doneKg).toFixed(1));
 
-  // Planned potential (not counted)
-  if (plannedPotential && plannedCount) {
-    plannedPotential.textContent = `${planner.todoKg.toFixed(1)} kg`;
-    plannedCount.textContent = `${planner.todoCount}`;
-    plannedBox.style.display = "block";
+  // Planned potential (only eco tasks in today's list)
+  if (plannedPotential && plannedCount && plannedBox) {
+    const show = (planner.todoCount > 0);
+    plannedBox.style.display = show ? "block" : "none";
+    if (show) {
+      plannedPotential.textContent = `${planner.todoKg.toFixed(1)} kg`;
+      plannedCount.textContent = `${planner.todoCount}`;
+    }
   }
 
-  // Rating: simple and believable
+  // "Climate Risk Today": more savings => lower risk
   let level = "Medium";
   if (savedKg >= 3.0) level = "Low";
   else if (savedKg >= 1.2) level = "Medium";
   else level = "High";
 
   impactStatus.textContent = level.toUpperCase();
-  setImpactColor(level);
+  setRiskColor(level);
 
   impactSaved.textContent = `${savedKg.toFixed(1)} kg`;
 
@@ -365,21 +343,21 @@ updateImpactSnapshot();
 
 // ===== Reset today (REAL) =====
 function resetToday() {
-  if (!confirm("Reset today’s completed actions? (Quick Actions + today’s Planner checkmarks only)")) return;
+  if (!confirm("Reset today’s completed actions? (Quick Actions + today's Planner checkmarks only)")) return;
 
-  // Clear quick actions today
   doneToday = { date: ymdToday(), actions: {} };
   saveJSON(userKey("doneToday"), doneToday);
 
-  // Clear planner checkmarks for today if today plan matches
   const saved = loadPlannerSaved();
-  if (saved?.days?.length && saved.days[0]?.items?.length && saved.days[0].ymd === ymdToday()) {
-    saved.days[0].items = saved.days[0].items.map(it => ({ ...it, done: false }));
+  if (saved?.today?.length) {
+    saved.today = saved.today.map(it => ({ ...it, done: false }));
+    saved.date = ymdToday();
     saveJSON(userKey("plannerSaved"), saved);
   }
 
   refreshQuickButtons();
   updateImpactSnapshot();
+  renderPlannerFromSavedIfAny();
   toast("Reset today ✅");
 }
 resetTodayBtn?.addEventListener("click", resetToday);
@@ -392,7 +370,6 @@ document.querySelectorAll(".qaBtn").forEach(btn => {
 
     doneToday.actions[action] = true;
 
-    // Eco score bump: small & consistent
     const scoreBumps = { bus: 3, bottle: 1, veg: 2, lights: 1 };
     homeEcoScore += (scoreBumps[action] || 1);
     homeEcoScore = Math.max(0, Math.min(100, Math.round(homeEcoScore)));
@@ -458,7 +435,7 @@ function setActiveTab(tabName) {
 
   if (tabName === "carbon") renderEcoHistory();
   if (tabName === "impact") renderImpactHistory();
-  if (tabName === "resources") loadResourcesLastPlanIfAny();
+  if (tabName === "resources") loadResourcesPrefsAndRender();
   if (tabName === "planner") {
     const pref = loadPlannerEcoToHomePref();
     if (planEcoToHome) planEcoToHome.checked = pref;
@@ -504,7 +481,7 @@ function renderNormalResult(result) {
   accessibleText.textContent = result.accessible || "";
 }
 
-
+// ===== Gemini Guidance (ONLY for guidance tab) =====
 async function generateGuidanceWithGemini(userText) {
   const prompt = `
 You are CivicClear, an AI civic assistant.
@@ -727,27 +704,27 @@ function calculateEcoFromForm() {
       recycleHabit === "rarely" ? "Rarely" : "Sometimes";
 
   const plasticLabel =
-    plastic === "low" ? "Low" :
-      plastic === "high" ? "High" : "Medium";
+    plastic === "low" ? "Low (0–1)" :
+      plastic === "high" ? "High (5+)" : "Medium (2–4)";
 
   const commuteText = `Transport: ${commuteLabel} • Miles: ${miles} • Score change: -${Math.round(drivePenalty)}${ecoCarpool?.checked ? " • Carpool +5" : ""}`;
   const dietText = `Food: ${dietLabel} • Score change: ${formatScoreChange(dietPenalty)}`;
-  const consumptionText = `Consumption: ${shopLabel} • Score change: ${formatScoreChange(shoppingPenalty)}`;
+  const consumptionText = `Shopping: ${shopLabel} • Score change: ${formatScoreChange(shoppingPenalty)}`;
   const wasteTotal = recyclePenalty + plasticPenalty;
-  const wasteText = `Waste: Recycle ${recycleLabel}, Plastics ${plasticLabel} • Score change: ${formatScoreChange(wasteTotal)}`;
+  const wasteText = `Waste: Recycle ${recycleLabel}, Single-use ${plasticLabel} • Score change: ${formatScoreChange(wasteTotal)}`;
 
   const biggest = [
     { name: "Driving", value: drivePenalty },
     { name: "Diet", value: Math.max(0, dietPenalty) },
-    { name: "Consumption", value: Math.max(0, shoppingPenalty) },
+    { name: "Shopping", value: Math.max(0, shoppingPenalty) },
     { name: "Waste", value: Math.max(0, wasteTotal) }
   ].sort((a, b) => b.value - a.value)[0].name;
 
   let tip1 = "Try one small change today.";
   if (biggest === "Driving") tip1 = "Driving was biggest: combine trips, carpool, or take transit once.";
   if (biggest === "Diet") tip1 = "Diet was biggest: swap one heavy-meat meal for beans/vegetarian.";
-  if (biggest === "Consumption") tip1 = "Consumption was biggest: skip one purchase or buy secondhand.";
-  if (biggest === "Waste") tip1 = "Waste was biggest: reduce single-use plastics and recycle/compost.";
+  if (biggest === "Shopping") tip1 = "Shopping was biggest: skip one purchase or buy secondhand.";
+  if (biggest === "Waste") tip1 = "Waste was biggest: reduce single-use items and recycle/compost.";
 
   const actions = [
     tip1,
@@ -760,7 +737,7 @@ function calculateEcoFromForm() {
   return { score, rating, commuteText, dietText, consumptionText, wasteText, actions, accessible };
 }
 
-
+// ===== Eco history (PER USER) =====
 function getEcoHistory() {
   return loadJSON(userKey("ecoHistory"), []);
 }
@@ -812,7 +789,6 @@ ecoCalcBtn.addEventListener("click", () => {
   renderEcoHistory();
   renderEcoResult(eco);
 
-  // Align home eco score with calculated eco score
   homeEcoScore = eco.score;
   persistDashboardBasics();
   refreshHomeNumbers();
@@ -847,7 +823,7 @@ ecoCopyBtn.addEventListener("click", () => {
   text += "\nSuggestions:\n";
   Array.from(ecoActionsList.children).forEach(li => text += `- ${li.textContent}\n`);
 
-  text += "\nAccessible Summary:\n" + ecoAccessibleText.textContent + "\n\n";
+  text += "\nPlain-language summary:\n" + ecoAccessibleText.textContent + "\n\n";
   text += "History:\n" + (ecoStatsText.textContent || "") + "\n";
   Array.from(ecoHistoryList.children).forEach(li => text += `- ${li.textContent}\n`);
 
@@ -898,8 +874,6 @@ function saveImpactHistory(arr) {
 }
 function addImpactHistory(entry) {
   let h = getImpactHistory();
-
-  // Deduplicate exact same label on same day to stop “spam”
   const dupe = h.find(x => x.date === entry.date && x.label === entry.label);
   if (dupe) return h;
 
@@ -992,13 +966,7 @@ impactCopyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
-// ===== Resources (persist + validate details) =====
-function clearResourcesUI() {
-  resLinks.innerHTML = "";
-  resChecklist.innerHTML = "";
-  resPlain.textContent = "Your resource plan will appear here.";
-  resStatus.textContent = "";
-}
+// ===== Resources (LINKS ONLY) =====
 function linkCard(title, url, tag) {
   const div = document.createElement("div");
   div.className = "resLink";
@@ -1015,228 +983,99 @@ function googleSearchLink(query) {
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
 
-function detailsSeemsUseful(category, details) {
-  const d = (details || "").toLowerCase().trim();
-  if (!d) return false;
-  if (d.length < 8) return false;
-
-  // If user typed something obviously irrelevant
-  const nonsense = ["happy", "lol", "idk", "test", "asdf", "hello"];
-  if (nonsense.some(w => d === w)) return false;
-
-  // Category hint keywords
-  const hints = {
-    housing: ["rent", "evict", "lease", "landlord", "homeless", "shelter", "utilities"],
-    food: ["food", "snap", "hungry", "pantry", "groceries"],
-    health: ["doctor", "clinic", "therapy", "meds", "depressed", "anxiety", "crisis"],
-    legal: ["court", "notice", "benefits", "appeal", "lawyer", "ticket", "eviction"],
-    jobs: ["scam", "pay", "wage", "hours", "fired", "unemploy", "job"],
-    emergency: ["shelter", "storm", "evacu", "fire", "flood", "danger"]
-  }[category] || [];
-
-  return hints.length ? hints.some(k => d.includes(k)) : true;
-}
-
-function buildResourcesPlan(category, locationText, detailsText) {
-  const loc = (locationText || "").trim() || "your area";
-  const details = (detailsText || "").trim();
-  const useDetails = detailsSeemsUseful(category, details);
-
-  const commonLinks = [
+function baseLinksForCategory(category) {
+  const common = [
     { title: "Call 2-1-1 (local help & referrals)", url: "https://www.211.org/", tag: "Best first step" },
-    { title: "FindFood (food banks / pantries)", url: "https://www.feedingamerica.org/find-your-local-foodbank", tag: "Food" },
     { title: "Benefits.gov (benefits screener)", url: "https://www.benefits.gov/", tag: "Benefits" },
     { title: "USA.gov (official services directory)", url: "https://www.usa.gov/", tag: "Official" }
   ];
 
-  const localShortcuts = [];
-  if (locationText && locationText.trim()) {
-    const base = locationText.trim();
-    const qMap = {
-      housing: ["emergency rental assistance", "housing authority", "tenant legal aid"],
-      food: ["food pantry", "SNAP office", "community fridge"],
-      health: ["community health clinic", "mental health crisis center", "urgent care"],
-      legal: ["legal aid", "tenant lawyer", "benefits legal help"],
-      jobs: ["workforce development center", "job center", "report job scam FTC"],
-      emergency: ["emergency shelter", "evacuation center", "Red Cross shelter"]
-    }[category] || ["local services"];
-
-    qMap.forEach(q => {
-      localShortcuts.push({
-        title: `Map: ${q} near ${base}`,
-        url: mapsSearchLink(`${q} near ${base}`),
-        tag: "Local map"
-      });
-    });
-
-    localShortcuts.push({
-      title: `Search: ${category} help near ${base}`,
-      url: googleSearchLink(`${category} help near ${base}`),
-      tag: "Local search"
-    });
-  }
-
-  const plan = { links: [...localShortcuts, ...commonLinks], checklist: [], plain: "" };
-  const insertAt = localShortcuts.length;
-
-  if (category === "housing") {
-    plan.links.splice(insertAt, 0, { title: "HUD Rental Assistance", url: "https://www.hud.gov/topics/rental_assistance", tag: "Housing" });
-    plan.checklist = [
-      "Call 2-1-1 and ask for emergency rental assistance programs near you.",
-      "Gather: ID, lease, pay stubs or income proof, past-due notices, utility bills.",
-      "Ask your landlord about payment plan options (get it in writing).",
-      "If eviction risk: seek legal aid immediately (local legal aid / tenant hotline)."
-    ];
-    plan.plain = `For housing help in ${loc}, start with 2-1-1 and ask for emergency rental assistance. Gather basic documents and request a payment plan if needed. If eviction is possible, contact legal aid fast.`;
-  }
-
-  if (category === "food") {
-    plan.links.splice(insertAt, 0, { title: "SNAP (food assistance) info", url: "https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program", tag: "SNAP" });
-    plan.checklist = [
-      "Call 2-1-1 and ask for food pantries + SNAP help in your area.",
-      "Use Feeding America’s locator to find a nearby pantry.",
-      "Gather: ID, address proof, income info (if applying for SNAP).",
-      "Plan a 3–5 day grocery list based on pantry items to stretch food longer."
-    ];
-    plan.plain = `For food help in ${loc}, check a nearby pantry first (fastest), then apply for SNAP if you qualify. 2-1-1 can connect you to both.`;
-  }
-
-  if (category === "health") {
-    plan.links.splice(insertAt, 0,
+  const cat = {
+    housing: [{ title: "HUD Rental Assistance", url: "https://www.hud.gov/topics/rental_assistance", tag: "Housing" }],
+    food: [
+      { title: "SNAP (food assistance) info", url: "https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program", tag: "SNAP" },
+      { title: "FindFood (food banks / pantries)", url: "https://www.feedingamerica.org/find-your-local-foodbank", tag: "Food" }
+    ],
+    health: [
       { title: "Find a Health Center (HRSA)", url: "https://findahealthcenter.hrsa.gov/", tag: "Low-cost care" },
       { title: "988 Suicide & Crisis Lifeline", url: "https://988lifeline.org/", tag: "Urgent help" }
-    );
-    plan.checklist = [
-      "If you feel unsafe right now: call/text 988 or local emergency services.",
-      "Search HRSA for low-cost clinics near you.",
-      "Ask 2-1-1 for mental health services and sliding-scale therapy.",
-      "Write down symptoms + meds so you can explain clearly at an appointment."
-    ];
-    plan.plain = `For health support in ${loc}, use HRSA to find low-cost clinics. If there’s a crisis, 988 is available now. 2-1-1 can point to local programs.`;
-  }
-
-  if (category === "legal") {
-    plan.links.splice(insertAt, 0, { title: "Legal Services Corporation (find legal aid)", url: "https://www.lsc.gov/about-lsc/what-legal-aid/i-need-legal-help", tag: "Legal aid" });
-    plan.checklist = [
-      "Write a short timeline of what happened (dates, names, notices).",
-      "Gather key paperwork and screenshots.",
-      "Find legal aid near you (LSC) and request an intake appointment.",
-      "If dealing with benefits: use Benefits.gov to find programs you may qualify for."
-    ];
-    plan.plain = `For legal/benefit issues in ${loc}, gather your documents and contact legal aid via LSC. Keep a clear timeline—it speeds up help.`;
-  }
-
-  if (category === "jobs") {
-    plan.links.splice(insertAt, 0,
+    ],
+    legal: [{ title: "Legal Services Corporation (find legal aid)", url: "https://www.lsc.gov/about-lsc/what-legal-aid/i-need-legal-help", tag: "Legal aid" }],
+    jobs: [
       { title: "Department of Labor (worker rights)", url: "https://www.dol.gov/general/topic/workhours", tag: "Worker rights" },
       { title: "Report fraud / scams (FTC)", url: "https://reportfraud.ftc.gov/", tag: "Report scams" }
-    );
-    plan.checklist = [
-      "Write down employer details, hours worked, pay rate, and missed payments/issues.",
-      "Save messages, schedules, pay stubs, and screenshots.",
-      "If it’s a job scam: stop sending info and report (FTC).",
-      "Use 2-1-1 for local job programs and emergency support if needed."
-    ];
-    plan.plain = `For job issues in ${loc}, document everything (hours/pay/messages). If it seems like a scam, report to the FTC and stop sharing personal info.`;
-  }
-
-  if (category === "emergency") {
-    plan.links.splice(insertAt, 0,
+    ],
+    emergency: [
       { title: "Find an emergency shelter (Red Cross)", url: "https://www.redcross.org/get-help/disaster-relief-and-recovery-services/find-an-open-shelter.html", tag: "Shelter" },
       { title: "FEMA disaster assistance", url: "https://www.disasterassistance.gov/", tag: "Disaster" }
-    );
-    plan.checklist = [
-      "If in immediate danger: call emergency services and move to safety.",
-      "Monitor official alerts from your local government/weather services.",
-      "Pack essentials: ID, meds, water, charger, warm layer.",
-      "Use Red Cross shelter finder if you need a safe place quickly."
-    ];
-    plan.plain = `For emergencies in ${loc}, prioritize safety first. Follow official alerts and prepare essentials. If you need shelter, use Red Cross and check FEMA assistance if applicable.`;
-  }
+    ]
+  }[category] || [];
 
-  if (useDetails) {
-    plan.checklist.unshift(`Call script: “Hi, I’m in ${loc}. ${details} Can you connect me to the right local program?”`);
-  } else {
-    plan.checklist.unshift(`Call script: “Hi, I’m in ${loc}. I need help with ${category}. What local programs should I start with?”`);
-  }
-
-  return { ...plan, usedDetails: useDetails };
+  return [...cat, ...common];
 }
 
-function renderResourcesPlan(plan) {
+function localShortcuts(category, loc) {
+  const base = (loc || "").trim();
+  if (!base) return [];
+
+  const qMap = {
+    housing: ["emergency rental assistance", "housing authority", "tenant legal aid"],
+    food: ["food pantry", "SNAP office", "community fridge"],
+    health: ["community health clinic", "mental health crisis center", "urgent care"],
+    legal: ["legal aid", "tenant lawyer", "benefits legal help"],
+    jobs: ["workforce development center", "job center", "report job scam FTC"],
+    emergency: ["emergency shelter", "evacuation center", "Red Cross shelter"]
+  }[category] || ["local services"];
+
+  const out = [];
+  qMap.forEach(q => out.push({ title: `Map: ${q} near ${base}`, url: mapsSearchLink(`${q} near ${base}`), tag: "Local map" }));
+  out.push({ title: `Search: ${category} help near ${base}`, url: googleSearchLink(`${category} help near ${base}`), tag: "Local search" });
+  return out;
+}
+
+function renderResourceLinks() {
+  if (!resLinks) return;
   resLinks.innerHTML = "";
-  plan.links.forEach(l => resLinks.appendChild(linkCard(l.title, l.url, l.tag)));
 
-  resChecklist.innerHTML = "";
-  plan.checklist.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = item;
-    resChecklist.appendChild(li);
-  });
-
-  resPlain.textContent = plan.plain;
-}
-
-// Persist last resource plan
-function saveResourcesLastPlan(payload) {
-  saveJSON(userKey("resourcesLastPlan"), payload);
-}
-function loadResourcesLastPlanIfAny() {
-  const last = loadJSON(userKey("resourcesLastPlan"), null);
-  if (!last) return; // keep whatever is on screen
-  // restore inputs
-  resCategory.value = last.category || "housing";
-  resLocation.value = last.location || "";
-  resDetails.value = last.details || "";
-  if (last.plan) renderResourcesPlan(last.plan);
-  resStatus.textContent = last.status || "";
-}
-
-resExampleBtn.addEventListener("click", () => {
-  resCategory.value = "housing";
-  resLocation.value = "Newark, DE";
-  resDetails.value = "Behind on rent and need food support this week.";
-  resStatus.textContent = "Example loaded. Click Build Plan.";
-});
-
-resGenerateBtn.addEventListener("click", () => {
   const category = resCategory.value;
   const loc = (resLocation.value || "").trim();
-  const details = (resDetails.value || "").trim();
 
-  const plan = buildResourcesPlan(category, resLocation.value, resDetails.value);
-  renderResourcesPlan(plan);
+  const links = [...localShortcuts(category, loc), ...baseLinksForCategory(category)];
+  links.forEach(l => resLinks.appendChild(linkCard(l.title, l.url, l.tag)));
 
-  let status = loc ? "Plan built with local map links." : "Plan built. Add city/state for local map links.";
-  if (details && !plan.usedDetails) status += " (Details looked unclear, so we used a generic call script.)";
+  resStatus.textContent = loc
+    ? "Showing trusted links + local map/search shortcuts."
+    : "Showing trusted links. Add city/state for local map links.";
 
-  resStatus.textContent = status;
-  toast("Plan built ✅");
+  saveJSON(userKey("resourcesPrefs"), { category, loc });
+}
 
-  saveResourcesLastPlan({
-    category,
-    location: resLocation.value,
-    details: resDetails.value,
-    plan,
-    status
-  });
+function loadResourcesPrefsAndRender() {
+  const saved = loadJSON(userKey("resourcesPrefs"), null);
+  if (saved?.category) resCategory.value = saved.category;
+  if (typeof saved?.loc === "string") resLocation.value = saved.loc;
+  renderResourceLinks();
+}
+
+resShowBtn?.addEventListener("click", () => {
+  renderResourceLinks();
+  toast("Links updated ✅");
 });
+resClearBtn?.addEventListener("click", () => {
+  resLocation.value = "";
+  renderResourceLinks();
+  toast("Cleared");
+});
+resCategory?.addEventListener("change", renderResourceLinks);
 
-resCopyBtn.addEventListener("click", () => {
-  let text = `Resources Plan (${resCategory.value})\n`;
-  text += `Location: ${resLocation.value || "—"}\n`;
-  if (resDetails.value.trim()) text += `Details: ${resDetails.value.trim()}\n`;
-  text += "\nLinks:\n";
-  resLinks.querySelectorAll("a").forEach(a => {
-    text += `- ${a.textContent}: ${a.href}\n`;
-  });
-  text += "\nChecklist:\n";
-  Array.from(resChecklist.children).forEach(li => text += `- ${li.textContent}\n`);
-  text += "\nSummary:\n" + resPlain.textContent + "\n";
+resCopyBtn?.addEventListener("click", () => {
+  let text = `Resources (${resCategory.value})\n`;
+  text += `Location: ${resLocation.value || "—"}\n\nLinks:\n`;
+  resLinks.querySelectorAll("a").forEach(a => { text += `- ${a.textContent}: ${a.href}\n`; });
   navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
-// ===== Planner (more app-like + clear eco stats) =====
+// ===== Planner (Simplified + Reliable) =====
 const WEEKDAY_MAP = {
   sun: 0, sunday: 0,
   mon: 1, monday: 1,
@@ -1255,28 +1094,9 @@ function detectWeekdayIndex(text) {
   }
   return null;
 }
-function parseMinutes(text) {
-  const lower = (text || "").toLowerCase();
-
-  const range = lower.match(/(\d{1,2})\s*(?:-|–)\s*(\d{1,2})\s*(am|pm)?/i);
-  if (range) {
-    const a = parseInt(range[1], 10);
-    const b = parseInt(range[2], 10);
-    const hours = Math.max(1, Math.abs(b - a));
-    return hours * 60;
-  }
-
-  const m1 = lower.match(/(\d+)\s*min/);
-  if (m1) return Math.max(5, Math.min(480, parseInt(m1[1], 10)));
-
-  const h1 = lower.match(/(\d+(\.\d+)?)\s*(hour|hr|hrs|h)\b/);
-  if (h1) {
-    const hrs = parseFloat(h1[1]);
-    return Math.max(5, Math.min(480, Math.round(hrs * 60)));
-  }
-
-  if (lower.includes("work") || lower.includes("shift")) return 240;
-  return 45;
+function weekdayLabel(idx) {
+  const map = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return (idx == null) ? "" : (map[idx] || "");
 }
 
 function ecoTagging(text) {
@@ -1285,12 +1105,12 @@ function ecoTagging(text) {
   let points = 0;
 
   const rules = [
-    { keys: ["bus", "transit", "train", "walk", "bike"], tag: "Transit", pts: 6, kg: 0.6 },
-    { keys: ["carpool", "share ride"], tag: "Carpool", pts: 4, kg: 0.4 },
-    { keys: ["meatless", "vegetarian", "vegan"], tag: "Diet", pts: 5, kg: 0.5 },
-    { keys: ["recycle", "compost"], tag: "Waste", pts: 3, kg: 0.2 },
-    { keys: ["reusable", "bottle", "tote"], tag: "Reuse", pts: 2, kg: 0.1 },
-    { keys: ["lights off", "unplug", "energy", "thermostat"], tag: "Energy", pts: 4, kg: 0.3 }
+    { keys: ["bus", "transit", "train", "walk", "bike", "biking"], tag: "Transit", pts: 6, kg: 0.6 },
+    { keys: ["carpool", "share ride", "shared ride"], tag: "Carpool", pts: 4, kg: 0.4 },
+    { keys: ["meatless", "vegetarian", "vegan", "beans"], tag: "Diet", pts: 5, kg: 0.5 },
+    { keys: ["recycle", "recycling", "compost"], tag: "Waste", pts: 3, kg: 0.2 },
+    { keys: ["reusable", "refill", "bottle", "tote"], tag: "Reuse", pts: 2, kg: 0.1 },
+    { keys: ["lights off", "turn off lights", "unplug", "energy", "thermostat"], tag: "Energy", pts: 4, kg: 0.3 }
   ];
 
   let kg = 0;
@@ -1305,155 +1125,146 @@ function ecoTagging(text) {
   return { tags, ecoPoints: points, ecoKg: Number(kg.toFixed(1)) };
 }
 
-function lineSeemsRealTask(line) {
-  const t = (line || "").trim();
-  if (t.length < 3) return false;
-  // reject obvious gibberish: no vowels AND no digits AND no spaces pattern? (simple heuristic)
-  const hasVowel = /[aeiou]/i.test(t);
-  const hasWord = /[a-z]{3,}/i.test(t);
-  return hasVowel || hasWord;
+function isPriorityTask(text) {
+  const lower = (text || "").toLowerCase();
+  return /\bquiz\b|\bexam\b|\bdue\b|\bdeadline\b|\bby\b/i.test(lower);
 }
 
-function parseTasks(text, mode) {
-  const lines = (text || "").split("\n").map(x => x.trim()).filter(Boolean);
-  const tasks = [];
+// Safe minutes parsing (no "10-15" becomes 5 hours by accident)
+function parseMinutesSafe(text, { isEco, isPriority }) {
+  const lower = (text || "").toLowerCase();
 
-  for (const line of lines) {
-    if (!lineSeemsRealTask(line)) continue;
+  // Explicit minutes
+  const m1 = lower.match(/(\d+)\s*min\b/);
+  if (m1) return clampMinutes(parseInt(m1[1], 10));
 
-    const lower = line.toLowerCase();
-    let dueIndex = detectWeekdayIndex(lower);
-    const minutes = parseMinutes(lower);
+  // Explicit hours
+  const h1 = lower.match(/(\d+(\.\d+)?)\s*(hour|hr|hrs|h)\b/);
+  if (h1) return clampMinutes(Math.round(parseFloat(h1[1]) * 60));
 
-    let priority = 2;
-    if (/\bquiz\b|\bexam\b|\bdue\b|\bby\b/i.test(lower)) priority = 1;
-    if (/\boptional\b|\bif time\b/i.test(lower)) priority = 3;
-
-    const eco = ecoTagging(line);
-    const isEco = eco.ecoPoints > 0;
-
-    // In eco mode, we keep tasks but we want eco to matter:
-    // we’ll prioritize eco tasks in scheduling.
-    tasks.push({
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2),
-      text: line,
-      dueIndex,
-      minutes,
-      priority,
-      ecoTags: eco.tags,
-      ecoPoints: eco.ecoPoints,
-      ecoKg: eco.ecoKg,
-      isEco
-    });
-  }
-
-  if (mode === "eco") {
-    const ecoCount = tasks.filter(t => t.isEco).length;
-    if (tasks.length === 0) {
-      planStatus.textContent = "Add tasks (one per line). Example: “bus to campus”, “reusable bottle”, “meatless dinner”.";
-    } else if (ecoCount === 0) {
-      planStatus.textContent = "Eco mode: no eco habits detected. Try adding: “bus”, “walk”, “reusable bottle”, “meatless meal”, “recycle”.";
+  // Time range ONLY if has am/pm somewhere
+  const hasAmPm = /\b(am|pm)\b/i.test(lower);
+  if (hasAmPm) {
+    const range = lower.match(/(\d{1,2})\s*(?:-|–)\s*(\d{1,2})\s*(am|pm)\b/i);
+    if (range) {
+      const a = parseInt(range[1], 10);
+      const b = parseInt(range[2], 10);
+      const hours = Math.max(1, Math.abs(b - a));
+      return clampMinutes(hours * 60);
     }
   }
 
-  return tasks;
+  // Keyword default for shifts/work
+  if (lower.includes("work") || lower.includes("shift")) return 240;
+
+  // Default by type
+  if (isEco) return 15;
+  if (isPriority) return 45;
+  return 30;
+}
+function clampMinutes(n) {
+  const v = Number(n || 0);
+  return Math.max(5, Math.min(240, v));
 }
 
-function buildPlan(tasks, daysCount, minutesPerDay, mode) {
+function lineSeemsRealTask(line) {
+  const t = (line || "").trim();
+  if (t.length < 2) return false;
+  const hasLetter = /[a-z]/i.test(t);
+  const hasDigit = /\d/.test(t);
+  const hasSpace = /\s/.test(t);
+  if (hasDigit) return true;
+  if (/[a-z]{3,}/i.test(t)) return true;
+  if (hasSpace && hasLetter) return true;
+  return false;
+}
+
+function parseTasksSimple(text) {
+  const lines = (text || "").split("\n").map(x => x.trim()).filter(Boolean);
+  const tasks = [];
+  let ignored = 0;
+
+  for (const line of lines) {
+    if (!lineSeemsRealTask(line)) { ignored++; continue; }
+
+    const dueIndex = detectWeekdayIndex(line);
+    const eco = ecoTagging(line);
+    const isEco = eco.ecoPoints > 0;
+    const priority = isPriorityTask(line);
+
+    const minutes = parseMinutesSafe(line, { isEco, isPriority: priority });
+
+    tasks.push({
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "_" + String(Math.random()).slice(2)),
+      text: line,
+      dueIndex,
+      isEco,
+      ecoTags: eco.tags,
+      ecoPoints: eco.ecoPoints,
+      ecoKg: eco.ecoKg,
+      priority,
+      minutes,
+      done: false
+    });
+  }
+
+  return { tasks, ignored, total: lines.length };
+}
+
+// Sort: due day first (soonest), then priority, then eco, then longer tasks
+function sortTasksForToday(tasks) {
   const now = new Date();
   const startDow = now.getDay();
 
   function dueInDays(task) {
-    if (task.dueIndex == null) 
-      return 999;
+    if (task.dueIndex == null) return 999;
     let delta = task.dueIndex - startDow;
     if (delta < 0) delta += 7;
     return delta;
   }
 
-  const sorted = [...tasks].sort((a, b) => {
+  return [...tasks].sort((a, b) => {
     const da = dueInDays(a), db = dueInDays(b);
     if (da !== db) return da - db;
 
-    // Eco mode: prefer eco tasks earlier
-    if (mode === "eco" && a.isEco !== b.isEco) return a.isEco ? -1 : 1;
+    if (a.priority !== b.priority) return a.priority ? -1 : 1;
+    if (a.isEco !== b.isEco) return a.isEco ? -1 : 1;
 
-    if (a.priority !== b.priority) return a.priority - b.priority;
     return b.minutes - a.minutes;
   });
+}
 
-  const days = [];
-  for (let i = 0; i < daysCount; i++) {
-    const info = dayLabelFromOffset(i);
-    days.push({
-      ymd: info.ymd,
-      label: info.label,
-      budget: minutesPerDay,
-      used: 0,
-      overflowMinutes: 0,
-      items: []
-    });
-  }
+// Fill today first, rest goes to backlog
+function buildTodayAndBacklog(tasks, minutesPerDay) {
+  const sorted = sortTasksForToday(tasks);
+  const today = [];
+  const next = [];
 
-  // Distribute better: don’t dump everything on day 0 unless it fits.
-  for (const task of sorted) {
-    let targetIndex = 0;
-    const dueDelta = dueInDays(task);
-    if (dueDelta !== 999) targetIndex = Math.min(daysCount - 1, dueDelta);
-
-    let placed = false;
-
-    // Try target day first
-    if (days[targetIndex].used + task.minutes <= days[targetIndex].budget) {
-      days[targetIndex].items.push({ ...task, done: false });
-      days[targetIndex].used += task.minutes;
-      placed = true;
-    }
-
-    // Then spread forward to balance
-    if (!placed) {
-      for (let i = targetIndex; i < daysCount; i++) {
-        if (days[i].used + task.minutes <= days[i].budget) {
-          days[i].items.push({ ...task, done: false });
-          days[i].used += task.minutes;
-          placed = true;
-          break;
-        }
-      }
-    }
-
-    // If still not placed, mark overflow and count overflow time
-    if (!placed) {
-      const last = days[daysCount - 1];
-      last.items.push({ ...task, done: false, overflow: true });
-      last.overflowMinutes += task.minutes;
+  let used = 0;
+  for (const t of sorted) {
+    if (used + t.minutes <= minutesPerDay) {
+      today.push({ ...t });
+      used += t.minutes;
+    } else {
+      next.push({ ...t });
     }
   }
 
-  return days;
+  return { today, next, used, budget: minutesPerDay };
 }
 
 function savedPlannerKey() {
   return userKey("plannerSaved");
 }
-function savePlanner(days, rawInput, meta) {
-  saveJSON(savedPlannerKey(), { date: ymdToday(), days, rawInput, meta });
+function savePlannerSimple(payload) {
+  saveJSON(savedPlannerKey(), payload);
 }
-function loadPlannerSaved2() {
+function loadPlannerSavedSimple() {
   return loadJSON(savedPlannerKey(), null);
 }
 
-function computeEcoPoints(days) {
-  let total = 0;
-  days.forEach(d => d.items.forEach(it => { total += (it.ecoPoints || 0); }));
-  return total;
-}
-
-function computeEcoKgStats(days) {
-  if (!days?.length) return { doneKg: 0, todoKg: 0, doneCount: 0, todoCount: 0 };
-  const today = days[0];
-  if (!today?.items?.length) return { doneKg: 0, todoKg: 0, doneCount: 0, todoCount: 0 };
-  const eco = today.items.filter(x => x.isEco);
+function computeEcoStatsFromToday(todayItems) {
+  const eco = (todayItems || []).filter(x => x.isEco);
   const done = eco.filter(x => x.done);
   const todo = eco.filter(x => !x.done);
   const doneKg = done.reduce((s, it) => s + Number(it.ecoKg || 0), 0);
@@ -1466,145 +1277,199 @@ function computeEcoKgStats(days) {
   };
 }
 
-function renderPlanner(days, meta, savedDate) {
-  planSchedule.innerHTML = "";
-  planToday.innerHTML = "";
+function pillHTML(item) {
+  const pills = [];
+  if (item.priority) pills.push(`<span class="typePill pri">⭐ Priority</span>`);
+  if (item.dueIndex != null) pills.push(`<span class="typePill due">📅 Due ${weekdayLabel(item.dueIndex)}</span>`);
+  if (item.isEco) {
+    const tag = item.ecoTags?.length ? `🌱 Eco (${item.ecoTags.join(", ")})` : "🌱 Eco";
+    pills.push(`<span class="typePill eco">${tag}</span>`);
+  }
+  if (!pills.length) pills.push(`<span class="typePill">🧠 General</span>`);
+  return pills.join("");
+}
 
-  if (!days || !days.length) {
+function renderPlannerSimple(payload) {
+  planTodayList.innerHTML = "";
+  planNextList.innerHTML = "";
+  planTodayFocus.innerHTML = "";
+
+  if (!payload?.today && !payload?.next) {
     planMeta.textContent = "No plan yet. Build one to start.";
+    if (planEcoSummary) planEcoSummary.style.display = "none";
     return;
   }
 
-  const points = computeEcoPoints(days);
-  const ecoLine = points > 0 ? ` • Eco points: ${points}` : "";
-  const stamp = savedDate ? formatYMD(savedDate) : formatYMD(ymdToday());
-  planMeta.textContent = `Plan • ${meta.days} day(s) • ${meta.minutes}/day • ${stamp}${ecoLine}`;
+  const today = payload.today || [];
+  const next = payload.next || [];
+  const used = payload.used || 0;
+  const budget = payload.budget || Number(planTime.value || 120);
+  const stamp = payload.date ? formatYMD(payload.date) : formatYMD(ymdToday());
 
-  // Eco summary for today (visible!)
-  const ecoStats = computeEcoKgStats(days);
+  planMeta.textContent = `Plan • Today budget: ${used}/${budget} min • ${stamp}`;
+
+  const ecoStats = computeEcoStatsFromToday(today);
   if (planEcoSummary && planEcoCompleted && planEcoPotential) {
     planEcoSummary.style.display = "flex";
     planEcoCompleted.textContent = `${ecoStats.doneKg.toFixed(1)} kg (${ecoStats.doneCount})`;
     planEcoPotential.textContent = `${ecoStats.todoKg.toFixed(1)} kg (${ecoStats.todoCount})`;
   }
 
-  days.forEach((d, dayIdx) => {
-    const card = document.createElement("div");
-    card.className = "dayCard";
+  // Today list (checkboxes)
+  if (!today.length) {
+    const div = document.createElement("div");
+    div.className = "miniMuted";
+    div.textContent = "No tasks scheduled for today. Add tasks and build a plan.";
+    planTodayList.appendChild(div);
+  } else {
+    today.forEach((it, idx) => {
+      const row = document.createElement("div");
+      row.className = "planRow";
 
-    const head = document.createElement("div");
-    head.className = "dayHeader";
-    const overflowBadge = d.overflowMinutes > 0 ? ` <span class="smallPill miniPill">Overflow</span>` : "";
-    head.innerHTML = `
-      <div class="dayTitle">${d.label}${overflowBadge}</div>
-      <div class="dayTime">${Math.min(d.used, d.budget)}/${d.budget} min</div>
-    `;
-    card.appendChild(head);
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!it.done;
 
-    if (!d.items.length) {
-      const empty = document.createElement("div");
-      empty.className = "miniMuted";
-      empty.textContent = "No tasks scheduled. Use this as rest/catch-up time.";
-      card.appendChild(empty);
-    } else {
-      d.items.forEach((it) => {
-        const row = document.createElement("label");
-        row.className = "taskRow";
+      const textWrap = document.createElement("div");
+      textWrap.style.flex = "1";
 
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = !!it.done;
+      const title = document.createElement("div");
+      title.className = "planText";
+      title.textContent = it.text;
 
-        const tag = (it.isEco && it.ecoTags?.length)
-          ? ` <span class="smallPill miniPill">🌱 ${it.ecoTags.join(", ")}</span>`
-          : "";
+      const pills = document.createElement("div");
+      pills.className = "planPills";
+      pills.innerHTML = pillHTML(it);
 
-        const text = document.createElement("div");
-        text.className = "taskText";
-        text.innerHTML = `${it.text}${tag}`;
+      textWrap.appendChild(title);
+      textWrap.appendChild(pills);
 
-        const metaDiv = document.createElement("div");
-        metaDiv.className = "taskMeta";
-        const overflow = it.overflow ? " • overflow" : "";
-        const ecoMeta = it.isEco ? ` • ${it.ecoKg}kg` : "";
-        metaDiv.textContent = `${it.minutes} min${ecoMeta}${overflow}`;
+      const right = document.createElement("div");
+      right.className = "planMetaRight";
+      right.innerHTML = `<span class="smallPill miniPill">${it.minutes} min</span>${it.isEco ? `<span class="smallPill miniPill">🌱 ${it.ecoKg}kg</span>` : ""}`;
 
-        cb.addEventListener("change", () => {
-          it.done = cb.checked;
+      cb.addEventListener("change", () => {
+        it.done = cb.checked;
 
-          const saved = loadPlannerSaved2();
-          if (saved && saved.days) {
-            saved.days[dayIdx].items = saved.days[dayIdx].items.map(x => x.id === it.id ? { ...x, done: it.done } : x);
-            saveJSON(savedPlannerKey(), saved);
-          }
+        const saved = loadPlannerSavedSimple();
+        if (saved?.today?.length) {
+          saved.today = saved.today.map(x => x.id === it.id ? { ...x, done: it.done } : x);
+          savePlannerSimple(saved);
+        }
 
-          // Meaningful activity if completing eco today
-          if (loadPlannerEcoToHomePref() && it.isEco && it.done && d.ymd === ymdToday()) {
-            markActiveToday();
-          }
+        if (loadPlannerEcoToHomePref() && it.isEco && it.done) {
+          markActiveToday();
+        }
 
-          updateImpactSnapshot();
-          renderTodayFocus(days);
+        updateImpactSnapshot();
+        renderTodayFocus(today);
+        const ecoStatsNow = computeEcoStatsFromToday(today);
+        if (planEcoCompleted && planEcoPotential) {
+          planEcoCompleted.textContent = `${ecoStatsNow.doneKg.toFixed(1)} kg (${ecoStatsNow.doneCount})`;
+          planEcoPotential.textContent = `${ecoStatsNow.todoKg.toFixed(1)} kg (${ecoStatsNow.todoCount})`;
+        }
 
-          // Update eco summary blocks live
-          const ecoStatsNow = computeEcoKgStats(days);
-          if (planEcoCompleted && planEcoPotential) {
-            planEcoCompleted.textContent = `${ecoStatsNow.doneKg.toFixed(1)} kg (${ecoStatsNow.doneCount})`;
-            planEcoPotential.textContent = `${ecoStatsNow.todoKg.toFixed(1)} kg (${ecoStatsNow.todoCount})`;
-          }
-
-          toast(it.done ? "Checked ✅" : "Unchecked");
-        });
-
-        row.appendChild(cb);
-        row.appendChild(text);
-        row.appendChild(metaDiv);
-
-        card.appendChild(row);
+        toast(it.done ? "Checked ✅" : "Unchecked");
       });
-    }
 
-    planSchedule.appendChild(card);
-  });
+      row.appendChild(cb);
+      row.appendChild(textWrap);
+      row.appendChild(right);
+      planTodayList.appendChild(row);
+    });
+  }
 
-  renderTodayFocus(days);
+  // Next up list (no checkboxes / disabled)
+  if (!next.length) {
+    const div = document.createElement("div");
+    div.className = "miniMuted";
+    div.textContent = "No backlog. Nice!";
+    planNextList.appendChild(div);
+  } else {
+    next.forEach((it) => {
+      const row = document.createElement("div");
+      row.className = "planRow disabled";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = false;
+      cb.disabled = true;
+
+      const textWrap = document.createElement("div");
+      textWrap.style.flex = "1";
+
+      const title = document.createElement("div");
+      title.className = "planText";
+      title.textContent = it.text;
+
+      const pills = document.createElement("div");
+      pills.className = "planPills";
+      pills.innerHTML = pillHTML(it);
+
+      textWrap.appendChild(title);
+      textWrap.appendChild(pills);
+
+      const right = document.createElement("div");
+      right.className = "planMetaRight";
+      right.innerHTML = `<span class="smallPill miniPill">${it.minutes} min</span>${it.isEco ? `<span class="smallPill miniPill">🌱 ${it.ecoKg}kg</span>` : ""}`;
+
+      row.appendChild(cb);
+      row.appendChild(textWrap);
+      row.appendChild(right);
+      planNextList.appendChild(row);
+    });
+  }
+
+  renderTodayFocus(today);
 }
 
-function renderTodayFocus(days) {
-  planToday.innerHTML = "";
-  if (!days?.length) return;
-  const today = days[0];
+function renderTodayFocus(todayItems) {
+  planTodayFocus.innerHTML = "";
+  const todo = (todayItems || []).filter(x => !x.done).slice(0, 4);
 
-  let items = today.items.filter(x => !x.done);
-  if (items.length < 2 && days[1]) items = items.concat(days[1].items.filter(x => !x.done));
-  items = items.slice(0, 4);
-
-  if (!items.length) {
+  if (!todo.length) {
     const li = document.createElement("li");
     li.textContent = "✅ You’re done! Pick one small bonus task or rest.";
-    planToday.appendChild(li);
+    planTodayFocus.appendChild(li);
     return;
   }
 
-  items.forEach(it => {
+  todo.forEach(it => {
     const li = document.createElement("li");
-    const pill = it.isEco ? `<span class="smallPill miniPill">🌱 ${it.ecoKg}kg</span>` : `<span class="smallPill miniPill">${it.minutes} min</span>`;
+    const pill = it.isEco
+      ? `<span class="smallPill miniPill">🌱 ${it.ecoKg}kg</span>`
+      : `<span class="smallPill miniPill">${it.minutes} min</span>`;
     li.innerHTML = `<span>${it.text}</span>${pill}`;
-    planToday.appendChild(li);
+    planTodayFocus.appendChild(li);
   });
 }
 
+function normalizePlannerToToday(saved) {
+  if (!saved) return null;
+
+  // If older plan exists, keep tasks but reset done for a fresh day.
+  if (saved.date !== ymdToday()) {
+    const today = (saved.today || []).map(it => ({ ...it, done: false }));
+    const next = (saved.next || saved.backlog || []).map(it => ({ ...it, done: false }));
+    const updated = { ...saved, date: ymdToday(), today, next };
+    savePlannerSimple(updated);
+    return updated;
+  }
+  return saved;
+}
+
 function renderPlannerFromSavedIfAny() {
-  const saved = loadPlannerSaved2();
-  if (saved && saved.days && saved.meta) {
-    renderPlanner(saved.days, saved.meta, saved.date);
+  let saved = loadPlannerSavedSimple();
+  saved = normalizePlannerToToday(saved);
+
+  if (saved) {
+    renderPlannerSimple(saved);
     if (saved.rawInput) planTasks.value = saved.rawInput;
-    if (saved.meta.minutes) planTime.value = String(saved.meta.minutes);
-    if (saved.meta.days) planDays.value = String(saved.meta.days);
-    if (saved.meta.mode) planMode.value = String(saved.meta.mode);
+    if (saved.budget) planTime.value = String(saved.budget);
   } else {
-    planSchedule.innerHTML = "";
-    planToday.innerHTML = "";
+    planTodayList.innerHTML = "";
+    planNextList.innerHTML = "";
+    planTodayFocus.innerHTML = "";
     planMeta.textContent = "No plan yet. Build one to start.";
     if (planEcoSummary) planEcoSummary.style.display = "none";
   }
@@ -1626,24 +1491,35 @@ planGenerateBtn.addEventListener("click", () => {
     return;
   }
 
-  const minutes = Number(planTime.value);
-  const daysCount = Number(planDays.value);
-  const mode = planMode.value;
+  const minutesPerDay = Number(planTime.value || 120);
 
-  const tasks = parseTasks(text, mode);
+  const parsed = parseTasksSimple(text);
+  const tasks = parsed.tasks;
+
   if (!tasks.length) {
-    planStatus.textContent = "Couldn’t detect any real tasks. Try short lines like “bus to campus” or “study 60 min”.";
+    planStatus.textContent = "Couldn’t detect any real tasks. Try lines like “bus to campus” or “study 60 min”.";
     toast("No tasks detected");
     return;
   }
 
-  const days = buildPlan(tasks, daysCount, minutes, mode);
-  const meta = { minutes, days: daysCount, mode };
+  const built = buildTodayAndBacklog(tasks, minutesPerDay);
 
-  if (planSave.checked) savePlanner(days, text, meta);
+  const payload = {
+    date: ymdToday(),
+    rawInput: text,
+    budget: minutesPerDay,
+    used: built.used,
+    today: built.today,
+    next: built.next
+  };
 
-  renderPlanner(days, meta, ymdToday());
-  planStatus.textContent = planSave.checked ? "Plan saved." : "Plan built (not saved).";
+  if (planSave.checked) savePlannerSimple(payload);
+
+  renderPlannerSimple(payload);
+
+  const ignoredMsg = parsed.ignored > 0 ? ` (${parsed.ignored} line(s) ignored — too short/unclear)` : "";
+  planStatus.textContent = (planSave.checked ? "Plan saved." : "Plan built (not saved).") + ignoredMsg;
+
   toast("Plan built ✅");
 });
 
@@ -1654,8 +1530,9 @@ planLoadBtn.addEventListener("click", () => {
 
 planClearBtn.addEventListener("click", () => {
   planTasks.value = "";
-  planSchedule.innerHTML = "";
-  planToday.innerHTML = "";
+  planTodayList.innerHTML = "";
+  planNextList.innerHTML = "";
+  planTodayFocus.innerHTML = "";
   planMeta.textContent = "No plan yet. Build one to start.";
   planStatus.textContent = "Cleared (saved plan unchanged).";
   if (planEcoSummary) planEcoSummary.style.display = "none";
@@ -1663,21 +1540,31 @@ planClearBtn.addEventListener("click", () => {
 });
 
 planCopyBtn.addEventListener("click", () => {
-  const saved = loadPlannerSaved2();
+  const saved = loadPlannerSavedSimple();
   let text = "Action Planner\n\n";
-  if (!saved?.days?.length) {
+  if (!saved?.today && !saved?.next) {
     text += "(No plan saved)\n";
   } else {
-    text += `${saved.meta.days} day(s), ${saved.meta.minutes}/day, mode: ${saved.meta.mode}\nSaved: ${formatYMD(saved.date)}\n\n`;
-    saved.days.forEach(d => {
-      text += `${d.label} (${Math.min(d.used, d.budget)}/${d.budget} min)\n`;
-      if (!d.items.length) text += "- (no tasks)\n";
-      else d.items.forEach(it => {
-        const eco = it.isEco ? ` [eco ${it.ecoKg}kg]` : "";
-        const done = it.done ? " ✅" : "";
-        text += `- ${it.text} (${it.minutes} min)${eco}${done}\n`;
-      });
-      text += "\n";
+    text += `Budget: ${saved.budget} min\nSaved: ${formatYMD(saved.date)}\n\n`;
+    text += "Today:\n";
+    if (!saved.today?.length) text += "- (none)\n";
+    else saved.today.forEach(it => {
+      const tags = [];
+      if (it.priority) tags.push("Priority");
+      if (it.dueIndex != null) tags.push(`Due ${weekdayLabel(it.dueIndex)}`);
+      if (it.isEco) tags.push(`Eco ${it.ecoKg}kg`);
+      const done = it.done ? " ✅" : "";
+      text += `- ${it.text} (${it.minutes} min)${tags.length ? ` [${tags.join(", ")}]` : ""}${done}\n`;
+    });
+
+    text += "\nNext Up:\n";
+    if (!saved.next?.length) text += "- (none)\n";
+    else saved.next.forEach(it => {
+      const tags = [];
+      if (it.priority) tags.push("Priority");
+      if (it.dueIndex != null) tags.push(`Due ${weekdayLabel(it.dueIndex)}`);
+      if (it.isEco) tags.push(`Eco ${it.ecoKg}kg`);
+      text += `- ${it.text} (${it.minutes} min)${tags.length ? ` [${tags.join(", ")}]` : ""}\n`;
     });
   }
   navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
@@ -1692,7 +1579,10 @@ clearEcoOutput();
 renderEcoHistory();
 renderImpactHistory();
 
-// Apply saved planner eco-to-home preference immediately
 if (planEcoToHome) planEcoToHome.checked = loadPlannerEcoToHomePref();
-
 setActiveTab("guidance");
+
+
+// =========================
+// END app.js
+// =========================
