@@ -288,7 +288,7 @@ ul, ol{ margin-top: 6px; }
   font-weight:600;
 }
 
-/* ===== Tooltip ===== */
+
 .tipWrap{
   position:relative;
   display:inline-block;
@@ -468,10 +468,10 @@ ul, ol{ margin-top: 6px; }
   color:#cfd8ff;
 }
 
-/* ===== Panels ===== */
+
 .panelSection{ margin-top: 10px; }
 
-/* ===== Impact Forecast ===== */
+
 .impactResultGrid{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -488,7 +488,7 @@ ul, ol{ margin-top: 6px; }
   padding:10px;
 }
 
-/* ===== Lists ===== */
+
 .listNice{
   list-style:none;
   padding-left:0;
@@ -519,7 +519,7 @@ ul, ol{ margin-top: 6px; }
   font-size:11px;
 }
 
-/* ===== Resources ===== */
+
 .resourceLinks{
   display:grid;
   grid-template-columns: 1fr;
@@ -547,7 +547,7 @@ ul, ol{ margin-top: 6px; }
   color:#aaa;
 }
 
-/* ===== Planner (Today + Next Up) ===== */
+
 .planList{
   display:grid;
   gap:10px;
@@ -637,7 +637,7 @@ ul, ol{ margin-top: 6px; }
   color:#dbe6ff;
 }
 
-/* layout helper */
+
 .rowBetween{
   display:flex;
   justify-content:space-between;
@@ -645,7 +645,7 @@ ul, ol{ margin-top: 6px; }
   gap:10px;
 }
 
-/* ===== Toast ===== */
+
 .toast{
   position: fixed;
   right: 16px;
