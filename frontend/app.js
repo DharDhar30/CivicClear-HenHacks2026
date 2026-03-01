@@ -1,11 +1,10 @@
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) window.location.href = "login_signup/login.html?expired=1";
-
-
 function userKey(suffix) {
   const u = encodeURIComponent(currentUser || "unknown");
-  return `civicclear_user_${u}_${suffix}`;
+  return "civicclear_user_" + u + "_" + suffix;
 }
+
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -189,14 +188,15 @@ const examples = {
 };
 
 const DEFAULT_ECO_SCORE = 50;
-let homeEcoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || String(DEFAULT_ECO_SCORE), 10);
-let streak = parseInt(localStorage.getItem(userKey("streak")) || "0", 10);
+let homeEcoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || DEFAULT_ECO_SCORE, 10);
+let streak = parseInt(localStorage.getItem(userKey("streak")) || 0, 10);
 let lastActionDay = localStorage.getItem(userKey("lastActionDay")) || "";
 
 function formatLastActive(ymd) {
   if (!ymd) return "Never";
   return formatYMD(ymd);
 }
+
 function persistDashboardBasics() {
   localStorage.setItem(userKey("ecoScore"), String(homeEcoScore));
   localStorage.setItem(userKey("streak"), String(streak));
