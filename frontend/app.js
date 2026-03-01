@@ -1,13 +1,9 @@
-// app.js (FULL) — Guidance tab uses Gemini via your Node proxy at http://localhost:5050/api/gemini
-// Other tabs keep your mock responses.
-
-// ===== Auth guard: block dashboard if not logged in =====
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) {
   window.location.href = "login_signup/login.html";
 }
 
-// ===== Welcome + Logout =====
+
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -15,7 +11,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
   window.location.href = "login_signup/login.html";
 });
 
-// ===== Tabs + Feature content =====
+
 const tabs = document.querySelectorAll(".tab");
 const panelTitle = document.getElementById("panelTitle");
 const userInput = document.getElementById("userInput");
@@ -40,7 +36,7 @@ const titles = {
   planner: "Smart Planner / Organizer"
 };
 
-// ✅ Slightly improved demo example (location + flooding mention)
+// Slightly improved demo example (location + flooding mention)
 const examples = {
   guidance:
     "EMERGENCY ALERT: Severe thunderstorm warning for Newark, DE until 8:30 PM. Winds may exceed 60 mph. Heavy rain and flash flooding possible. Avoid windows and do not drive through flooded roads.",
@@ -99,7 +95,7 @@ function renderResult(result) {
   accessibleText.textContent = result.accessible || "";
 }
 
-// ===== Gemini (Guidance tab) =====
+
 async function generateGuidanceWithGemini(userText) {
   const prompt = `
 You are CivicClear, an AI civic assistant.
@@ -157,7 +153,7 @@ Return ONLY JSON.
   return JSON.parse(jsonStr);
 }
 
-// ===== Mock results for other tabs (and fallback) =====
+
 function generateMockResult(input) {
   const lowered = (input || "").toLowerCase();
   let risk = "Low";
@@ -246,30 +242,30 @@ generateBtn.addEventListener("click", async () => {
   }
 });
 
-copyBtn.addEventListener("click", async () => {
-  const text =
-`Risk: ${riskBadge.textContent}
+copyBtn.addEventListener("click", function() {
 
-Summary:
-${summaryText.textContent}
+  // Build the text to copy
+  var text = "Risk: " + riskBadge.textContent + "\n\n";
+  text += "Summary:\n" + summaryText.textContent + "\n\n";
 
-Key Points:
-- ${Array.from(keyPointsList.children).map(li => li.textContent).join("\n- ")}
-
-Recommended Actions:
-- ${Array.from(actionsList.children).map(li => li.textContent).join("\n- ")}
-
-Accessible Version:
-${accessibleText.textContent}
-`;
-
-  try {
-    await navigator.clipboard.writeText(text);
-    alert("Copied!");
-  } catch {
-    alert("Copy failed in this browser.");
+  text += "Key Points:\n";
+  for (var i = 0; i < keyPointsList.children.length; i++) {
+    text += "- " + keyPointsList.children[i].textContent + "\n";
   }
+
+  text += "\nRecommended Actions:\n";
+  for (var i = 0; i < actionsList.children.length; i++) {
+    text += "- " + actionsList.children[i].textContent + "\n";
+  }
+
+  text += "\nAccessible Version:\n" + accessibleText.textContent;
+  
+  navigator.clipboard.writeText(text).then(function() {
+    alert("Copied!");
+  }).catch(function() {
+    alert("Copy failed in this browser.");
+  });
+
 });
 
-// ===== Start =====
 setActiveTab("guidance");
