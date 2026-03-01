@@ -3,7 +3,7 @@ if (!currentUser) {
   window.location.href = "login_signup/login.html";
 }
 
-// ===== Per-user storage helpers =====
+
 function userKey(suffix) {
   // Safe key format in case username has spaces
   const u = encodeURIComponent(currentUser || "unknown");
@@ -22,8 +22,6 @@ function loadJSON(key, fallback) {
 function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
-
-// ===== Welcome + Logout =====
 document.getElementById("welcomeText").textContent = `Welcome, ${currentUser}`;
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -56,7 +54,7 @@ const titles = {
   planner: "Smart Planner / Organizer"
 };
 
-// Slightly improved demo example (location + flooding mention)
+// Slightly improved demo example 
 const examples = {
   guidance:
     "EMERGENCY ALERT: Severe thunderstorm warning for Newark, DE until 8:30 PM. Winds may exceed 60 mph. Heavy rain and flash flooding possible. Avoid windows and do not drive through flooded roads.",
@@ -160,7 +158,6 @@ Return ONLY JSON.
     throw new Error(data.error || "Gemini request failed");
   }
 
-  // Robust JSON extraction (handles ```json fences or extra text)
   const raw = data.text || "";
   const cleaned = raw
     .replace(/```json/gi, "")
@@ -189,7 +186,7 @@ function generateMockResult(input) {
       risk: "Medium",
       summary: "Your estimated footprint today is moderate based on transportation and energy use.",
       keyPoints: ["Driving increases emissions", "AC use increases electricity demand", "Diet choices can raise impact"],
-      actions: ["Combine trips or carpool once this week", "Raise thermostat 1–2°F when possible", "Swap one beef meal for beans/chicken"],
+      actions: ["Combine trips or carpool once this week", "Raise thermostat 1–2 degrees F when possible", "Swap one beef meal for beans/chicken"],
       accessible: "Moderate footprint today. Biggest factors: driving and AC. Small changes can help."
     };
   }
@@ -234,7 +231,6 @@ function generateMockResult(input) {
   };
 }
 
-// ===== Events =====
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
 exampleBtn.addEventListener("click", () => {
@@ -291,8 +287,6 @@ copyBtn.addEventListener("click", function() {
   });
 
 });
-
-// ===== Home Dashboard (Eco Score + Quick Actions) — PER USER =====
 const ecoScoreNum = document.getElementById("ecoScoreNum");
 const streakNum = document.getElementById("streakNum");
 const lastActiveText = document.getElementById("lastActiveText");
@@ -320,7 +314,7 @@ let ecoScore = parseInt(localStorage.getItem(userKey("ecoScore")) || String(DEFA
 let streak = parseInt(localStorage.getItem(userKey("streak")) || "0", 10);
 let lastActionDay = localStorage.getItem(userKey("lastActionDay")) || "";
 
-// ✅ Auto-expire streak on login/load (if user missed days)
+// Auto-expire streak on login/load (if user missed days)
 if (lastActionDay) {
   const last = new Date(lastActionDay);
   const now = new Date(todayKey());
@@ -344,11 +338,19 @@ streakNum.textContent = streak;
 if (lastActiveText) lastActiveText.textContent = formatLastActive(lastActionDay);
 
 function refreshQuickButtons() {
-  document.querySelectorAll(".qaBtn").forEach(btn => {
-    const action = btn.dataset.action;
-    const done = !!doneToday.actions[action];
-    btn.disabled = done;
-    btn.textContent = (done ? "✅ " : "") + btn.textContent.replace(/^✅\s*/, "");
+  const buttons = document.querySelectorAll(".qaBtn");
+
+  buttons.forEach(function(button) {
+    const action = button.dataset.action;
+    const isDone = doneToday.actions[action] === true;
+    button.disabled = isDone;
+    let text = button.textContent.replace("DONE - ", "");
+
+    if (isDone) {
+      button.textContent = "DONE - " + text;
+    } else {
+      button.textContent = text;
+    }
   });
 }
 
@@ -409,7 +411,6 @@ document.querySelectorAll(".qaBtn").forEach(btn => {
     const action = btn.dataset.action;
     if (doneToday.actions[action]) return;
 
-    // Mark done today
     doneToday.actions[action] = true;
 
     // Score bump based on action type
@@ -417,7 +418,7 @@ document.querySelectorAll(".qaBtn").forEach(btn => {
     ecoScore += (scoreBumps[action] || 1);
     ecoScoreNum.textContent = ecoScore;
 
-    // Streak update: only counts if it’s the first action of the day
+    //only counts if it’s the first action of the day
     const today = todayKey();
     if (lastActionDay !== today) {
       const last = lastActionDay ? new Date(lastActionDay) : null;
@@ -434,36 +435,41 @@ document.querySelectorAll(".qaBtn").forEach(btn => {
 
     // Save everything per user
     persistDashboard();
-
-    // Refresh UI
     refreshQuickButtons();
     updateImpactSnapshot();
   });
 });
 
-// ===== Start =====
+
 setActiveTab("guidance");
 
-// ===== Tooltip mobile support =====
-document.querySelectorAll(".tipIcon").forEach(btn => {
-  btn.addEventListener("click", (e) => {
+
+document.querySelectorAll(".tipIcon").forEach(function(btn) {
+  btn.addEventListener("click", function(e) {
     e.preventDefault();
     e.stopPropagation();
 
     const tip = btn.parentElement.querySelector(".tipText");
     if (!tip) return;
 
-    const isOpen = tip.style.opacity === "1";
-    tip.style.opacity = isOpen ? "0" : "1";
-    tip.style.transform = isOpen ? "translateY(-4px)" : "translateY(0)";
-    tip.style.pointerEvents = isOpen ? "none" : "auto";
+    const open = tip.style.opacity === "1";
+
+    if (open) {
+      tip.style.opacity = "0";
+      tip.style.transform = "translateY(-4px)";
+      tip.style.pointerEvents = "none";
+    } else {
+      tip.style.opacity = "1";
+      tip.style.transform = "translateY(0)";
+      tip.style.pointerEvents = "auto";
+    }
   });
 });
 
-document.addEventListener("click", (e) => {
-  if (e.target.classList && e.target.classList.contains("tipIcon")) return;
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains("tipIcon")) return;
 
-  document.querySelectorAll(".tipText").forEach(tip => {
+  document.querySelectorAll(".tipText").forEach(function(tip) {
     tip.style.opacity = "0";
     tip.style.transform = "translateY(-4px)";
     tip.style.pointerEvents = "none";
