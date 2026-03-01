@@ -238,7 +238,6 @@ Return ONLY JSON.
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
-// ===== Eco output helpers =====
 function clearEcoOutput() {
   if (ecoScoreBigNum) ecoScoreBigNum.textContent = "—";
   if (ecoScoreRating) ecoScoreRating.textContent = "Fill inputs and click Calculate";
@@ -365,7 +364,7 @@ function calculateEcoFromForm() {
   return { score, rating, commuteText, dietText, consumptionText, wasteText, actions, accessible };
 }
 
-// ===== Eco history (PER USER) =====
+
 function getEcoHistory() {
   return loadJSON(userKey("ecoHistory"), []);
 }
@@ -406,7 +405,7 @@ function renderEcoHistory() {
   });
 }
 
-// ===== Home Dashboard (Quick Actions) — PER USER =====
+
 const DEFAULT_ECO_SCORE = 50;
 
 function formatLastActive(ymd) {
