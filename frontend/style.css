@@ -1,7 +1,3 @@
-/* =========================
-File: style.css
-========================= */
-
 * { box-sizing: border-box; }
 
 body{
@@ -397,7 +393,6 @@ ul, ol{ margin-top: 6px; }
 }
 .ecoCheck input{ transform: scale(1.1); }
 
-/* Smaller toggle style for planner preference */
 .ecoToggle{
   display:flex;
   gap:10px;
@@ -552,50 +547,78 @@ ul, ol{ margin-top: 6px; }
   color:#aaa;
 }
 
-/* ===== Planner (Simplified) ===== */
-.planSplit{ margin-top: 10px; }
-.planList{ display:grid; gap:10px; margin-top:10px; }
+/* ===== Planner (Today + Next Up) ===== */
+.planList{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+
 .planRow{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   gap:10px;
   padding:10px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.04);
 }
-.planRow input{ transform: scale(1.1); }
-.planText{ flex:1; font-weight:800; color:#dbe6ff; }
-.planMetaRight{ display:flex; gap:8px; align-items:center; }
-.planPills{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
-.typePill{
-  padding:5px 9px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.16);
-  color:#cfd8ff;
-  font-size:11px;
-  font-weight:900;
+
+.planRow input{
+  margin-top:4px;
+  transform: scale(1.1);
 }
-.typePill.eco{
-  background: rgba(79,140,255,0.16);
-  border-color: rgba(79,140,255,0.28);
-}
-.typePill.due{
-  background: rgba(241,196,15,0.12);
-  border-color: rgba(241,196,15,0.25);
-}
-.typePill.pri{
-  background: rgba(231,76,60,0.12);
-  border-color: rgba(231,76,60,0.25);
-}
+
 .planRow.disabled{
   opacity:0.75;
 }
-.planRow.disabled input{
-  pointer-events:none;
+
+.planText{
+  font-weight:800;
+  color:#dbe6ff;
 }
 
+.planPills{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+
+.typePill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:800;
+  font-size:11px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color:#dbe6ff;
+}
+
+.typePill.eco{
+  background: rgba(46, 204, 113, 0.10);
+  border-color: rgba(46, 204, 113, 0.22);
+}
+.typePill.pri{
+  background: rgba(241, 196, 15, 0.10);
+  border-color: rgba(241, 196, 15, 0.22);
+}
+.typePill.due{
+  background: rgba(79,140,255,0.12);
+  border-color: rgba(79,140,255,0.22);
+}
+
+.planMetaRight{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:flex-end;
+}
+
+/* ===== Planner summary ===== */
 .ecoSummary{
   display:flex;
   gap:10px;

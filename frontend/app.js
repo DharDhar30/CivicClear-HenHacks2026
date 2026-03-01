@@ -1,7 +1,3 @@
-// =========================
-// File: app.js
-// =========================
-
 // ===== Login Guard =====
 const currentUser = localStorage.getItem("civicclear_current_user");
 if (!currentUser) window.location.href = "login_signup/login.html?expired=1";
@@ -153,7 +149,6 @@ const resShowBtn = document.getElementById("resShowBtn");
 const resClearBtn = document.getElementById("resClearBtn");
 const resCopyBtn = document.getElementById("resCopyBtn");
 const resLinks = document.getElementById("resLinks");
-const resPlain = document.getElementById("resPlain");
 const resStatus = document.getElementById("resStatus");
 
 // Planner DOM (Simplified)
@@ -167,6 +162,8 @@ const planLoadBtn = document.getElementById("planLoadBtn");
 const planClearBtn = document.getElementById("planClearBtn");
 const planCopyBtn = document.getElementById("planCopyBtn");
 const planMeta = document.getElementById("planMeta");
+const planStatus = document.getElementById("planStatus");
+
 const planTodayList = document.getElementById("planTodayList");
 const planNextList = document.getElementById("planNextList");
 const planTodayFocus = document.getElementById("planTodayFocus");
@@ -235,6 +232,16 @@ function ensureTodayObject(key, fallback) {
 let doneToday = ensureTodayObject(userKey("doneToday"), { date: ymdToday(), actions: {} });
 saveJSON(userKey("doneToday"), doneToday);
 
+// ===== Planner eco-to-home preference (persists) =====
+function loadPlannerEcoToHomePref() {
+  const pref = localStorage.getItem(userKey("plannerEcoToHomePref"));
+  return pref === null ? true : (pref === "true");
+}
+function savePlannerEcoToHomePref(v) {
+  localStorage.setItem(userKey("plannerEcoToHomePref"), String(!!v));
+}
+
+// ===== Home UI helpers =====
 function refreshQuickButtons() {
   const buttons = document.querySelectorAll(".qaBtn");
   buttons.forEach(button => {
@@ -244,15 +251,6 @@ function refreshQuickButtons() {
     const baseText = button.textContent.replace("DONE - ", "");
     button.textContent = isDone ? ("DONE - " + baseText) : baseText;
   });
-}
-
-// ===== Planner eco-to-home preference (persists) =====
-function loadPlannerEcoToHomePref() {
-  const pref = localStorage.getItem(userKey("plannerEcoToHomePref"));
-  return pref === null ? true : (pref === "true");
-}
-function savePlannerEcoToHomePref(v) {
-  localStorage.setItem(userKey("plannerEcoToHomePref"), String(!!v));
 }
 
 // ===== REAL impact model (trustworthy) =====
@@ -278,6 +276,9 @@ function getPlannerEcoStatsToday() {
   const saved = loadPlannerSaved();
   if (!saved?.today?.length) return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
 
+  // Only count today's planner if it's saved for today
+  if (saved.date !== ymdToday()) return { doneCount: 0, doneKg: 0, todoCount: 0, todoKg: 0 };
+
   const eco = saved.today.filter(it => it.isEco);
   const done = eco.filter(it => it.done);
   const todo = eco.filter(it => !it.done);
@@ -293,7 +294,7 @@ function getPlannerEcoStatsToday() {
   };
 }
 
-function setRiskColor(level) {
+function setImpactColor(level) {
   if (!impactStatus) return;
   impactStatus.style.fontWeight = "900";
   if (level === "High") impactStatus.style.color = "#e74c3c";
@@ -309,7 +310,7 @@ function updateImpactSnapshot() {
 
   const savedKg = Number((qa.kg + planner.doneKg).toFixed(1));
 
-  // Planned potential (only eco tasks in today's list)
+  // Planned potential (eco tasks in today's list)
   if (plannedPotential && plannedCount && plannedBox) {
     const show = (planner.todoCount > 0);
     plannedBox.style.display = show ? "block" : "none";
@@ -319,14 +320,13 @@ function updateImpactSnapshot() {
     }
   }
 
-  // "Climate Risk Today": more savings => lower risk
   let level = "Medium";
   if (savedKg >= 3.0) level = "Low";
   else if (savedKg >= 1.2) level = "Medium";
   else level = "High";
 
   impactStatus.textContent = level.toUpperCase();
-  setRiskColor(level);
+  setImpactColor(level);
 
   impactSaved.textContent = `${savedKg.toFixed(1)} kg`;
 
@@ -349,9 +349,8 @@ function resetToday() {
   saveJSON(userKey("doneToday"), doneToday);
 
   const saved = loadPlannerSaved();
-  if (saved?.today?.length) {
+  if (saved?.today?.length && saved.date === ymdToday()) {
     saved.today = saved.today.map(it => ({ ...it, done: false }));
-    saved.date = ymdToday();
     saveJSON(userKey("plannerSaved"), saved);
   }
 
@@ -437,8 +436,7 @@ function setActiveTab(tabName) {
   if (tabName === "impact") renderImpactHistory();
   if (tabName === "resources") loadResourcesPrefsAndRender();
   if (tabName === "planner") {
-    const pref = loadPlannerEcoToHomePref();
-    if (planEcoToHome) planEcoToHome.checked = pref;
+    if (planEcoToHome) planEcoToHome.checked = loadPlannerEcoToHomePref();
     renderPlannerFromSavedIfAny();
   }
 
@@ -1130,19 +1128,21 @@ function isPriorityTask(text) {
   return /\bquiz\b|\bexam\b|\bdue\b|\bdeadline\b|\bby\b/i.test(lower);
 }
 
-// Safe minutes parsing (no "10-15" becomes 5 hours by accident)
+function clampMinutes(n) {
+  const v = Number(n || 0);
+  return Math.max(5, Math.min(240, v));
+}
+
+// Safe minutes parsing (prevents "10-15" being treated as hours unless am/pm exists)
 function parseMinutesSafe(text, { isEco, isPriority }) {
   const lower = (text || "").toLowerCase();
 
-  // Explicit minutes
   const m1 = lower.match(/(\d+)\s*min\b/);
   if (m1) return clampMinutes(parseInt(m1[1], 10));
 
-  // Explicit hours
   const h1 = lower.match(/(\d+(\.\d+)?)\s*(hour|hr|hrs|h)\b/);
   if (h1) return clampMinutes(Math.round(parseFloat(h1[1]) * 60));
 
-  // Time range ONLY if has am/pm somewhere
   const hasAmPm = /\b(am|pm)\b/i.test(lower);
   if (hasAmPm) {
     const range = lower.match(/(\d{1,2})\s*(?:-|–)\s*(\d{1,2})\s*(am|pm)\b/i);
@@ -1154,28 +1154,19 @@ function parseMinutesSafe(text, { isEco, isPriority }) {
     }
   }
 
-  // Keyword default for shifts/work
   if (lower.includes("work") || lower.includes("shift")) return 240;
 
-  // Default by type
   if (isEco) return 15;
   if (isPriority) return 45;
   return 30;
-}
-function clampMinutes(n) {
-  const v = Number(n || 0);
-  return Math.max(5, Math.min(240, v));
 }
 
 function lineSeemsRealTask(line) {
   const t = (line || "").trim();
   if (t.length < 2) return false;
-  const hasLetter = /[a-z]/i.test(t);
-  const hasDigit = /\d/.test(t);
-  const hasSpace = /\s/.test(t);
-  if (hasDigit) return true;
+  if (/\d/.test(t)) return true;
   if (/[a-z]{3,}/i.test(t)) return true;
-  if (hasSpace && hasLetter) return true;
+  if (/\s/.test(t) && /[a-z]/i.test(t)) return true;
   return false;
 }
 
@@ -1211,7 +1202,7 @@ function parseTasksSimple(text) {
   return { tasks, ignored, total: lines.length };
 }
 
-// Sort: due day first (soonest), then priority, then eco, then longer tasks
+// Sort: due soonest, then priority, then eco, then longer tasks
 function sortTasksForToday(tasks) {
   const now = new Date();
   const startDow = now.getDay();
@@ -1226,15 +1217,13 @@ function sortTasksForToday(tasks) {
   return [...tasks].sort((a, b) => {
     const da = dueInDays(a), db = dueInDays(b);
     if (da !== db) return da - db;
-
     if (a.priority !== b.priority) return a.priority ? -1 : 1;
     if (a.isEco !== b.isEco) return a.isEco ? -1 : 1;
-
     return b.minutes - a.minutes;
   });
 }
 
-// Fill today first, rest goes to backlog
+// Fill today first, rest goes to Next Up
 function buildTodayAndBacklog(tasks, minutesPerDay) {
   const sorted = sortTasksForToday(tasks);
   const today = [];
@@ -1289,6 +1278,27 @@ function pillHTML(item) {
   return pills.join("");
 }
 
+function renderTodayFocus(todayItems) {
+  planTodayFocus.innerHTML = "";
+  const todo = (todayItems || []).filter(x => !x.done).slice(0, 4);
+
+  if (!todo.length) {
+    const li = document.createElement("li");
+    li.textContent = "✅ You’re done! Pick one small bonus task or rest.";
+    planTodayFocus.appendChild(li);
+    return;
+  }
+
+  todo.forEach(it => {
+    const li = document.createElement("li");
+    const pill = it.isEco
+      ? `<span class="smallPill miniPill">🌱 ${it.ecoKg}kg</span>`
+      : `<span class="smallPill miniPill">${it.minutes} min</span>`;
+    li.innerHTML = `<span>${it.text}</span>${pill}`;
+    planTodayFocus.appendChild(li);
+  });
+}
+
 function renderPlannerSimple(payload) {
   planTodayList.innerHTML = "";
   planNextList.innerHTML = "";
@@ -1322,7 +1332,7 @@ function renderPlannerSimple(payload) {
     div.textContent = "No tasks scheduled for today. Add tasks and build a plan.";
     planTodayList.appendChild(div);
   } else {
-    today.forEach((it, idx) => {
+    today.forEach((it) => {
       const row = document.createElement("div");
       row.className = "planRow";
 
@@ -1363,6 +1373,7 @@ function renderPlannerSimple(payload) {
 
         updateImpactSnapshot();
         renderTodayFocus(today);
+
         const ecoStatsNow = computeEcoStatsFromToday(today);
         if (planEcoCompleted && planEcoPotential) {
           planEcoCompleted.textContent = `${ecoStatsNow.doneKg.toFixed(1)} kg (${ecoStatsNow.doneCount})`;
@@ -1379,7 +1390,7 @@ function renderPlannerSimple(payload) {
     });
   }
 
-  // Next up list (no checkboxes / disabled)
+  // Next up list (disabled)
   if (!next.length) {
     const div = document.createElement("div");
     div.className = "miniMuted";
@@ -1423,34 +1434,13 @@ function renderPlannerSimple(payload) {
   renderTodayFocus(today);
 }
 
-function renderTodayFocus(todayItems) {
-  planTodayFocus.innerHTML = "";
-  const todo = (todayItems || []).filter(x => !x.done).slice(0, 4);
-
-  if (!todo.length) {
-    const li = document.createElement("li");
-    li.textContent = "✅ You’re done! Pick one small bonus task or rest.";
-    planTodayFocus.appendChild(li);
-    return;
-  }
-
-  todo.forEach(it => {
-    const li = document.createElement("li");
-    const pill = it.isEco
-      ? `<span class="smallPill miniPill">🌱 ${it.ecoKg}kg</span>`
-      : `<span class="smallPill miniPill">${it.minutes} min</span>`;
-    li.innerHTML = `<span>${it.text}</span>${pill}`;
-    planTodayFocus.appendChild(li);
-  });
-}
-
 function normalizePlannerToToday(saved) {
   if (!saved) return null;
 
-  // If older plan exists, keep tasks but reset done for a fresh day.
+  // If older plan exists, keep the lists but reset done for a fresh day.
   if (saved.date !== ymdToday()) {
     const today = (saved.today || []).map(it => ({ ...it, done: false }));
-    const next = (saved.next || saved.backlog || []).map(it => ({ ...it, done: false }));
+    const next = (saved.next || []).map(it => ({ ...it, done: false }));
     const updated = { ...saved, date: ymdToday(), today, next };
     savePlannerSimple(updated);
     return updated;
@@ -1484,7 +1474,7 @@ planEcoToHome?.addEventListener("change", () => {
 });
 
 planGenerateBtn.addEventListener("click", () => {
-  const text = planTasks.value.trim();
+  const text = (planTasks.value || "").trim();
   if (!text) {
     planStatus.textContent = "Add a few tasks first (one per line).";
     toast("Add tasks first");
@@ -1546,6 +1536,7 @@ planCopyBtn.addEventListener("click", () => {
     text += "(No plan saved)\n";
   } else {
     text += `Budget: ${saved.budget} min\nSaved: ${formatYMD(saved.date)}\n\n`;
+
     text += "Today:\n";
     if (!saved.today?.length) text += "- (none)\n";
     else saved.today.forEach(it => {
@@ -1570,10 +1561,9 @@ planCopyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(text).then(() => toast("Copied ✅")).catch(() => toast("Copy failed"));
 });
 
-// ===== Events =====
+// ===== Start & Tab events =====
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
-// ===== Start =====
 clearNormalOutput();
 clearEcoOutput();
 renderEcoHistory();
@@ -1581,8 +1571,5 @@ renderImpactHistory();
 
 if (planEcoToHome) planEcoToHome.checked = loadPlannerEcoToHomePref();
 setActiveTab("guidance");
-
-
-// =========================
-// END app.js
-// =========================
+refreshQuickButtons();
+updateImpactSnapshot();

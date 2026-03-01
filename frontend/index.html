@@ -1,6 +1,3 @@
-<!-- =========================
-File: index.html
-========================= -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,11 +70,11 @@ File: index.html
             <div class="statRow">
               <div class="statBox">
                 <div class="statLabel">
-                  Climate Risk Today
+                  Impact Level
                   <span class="tipWrap">
                     <button class="tipIcon" type="button" aria-label="Impact level info">?</button>
                     <span class="tipText">
-                      This rating is based on real completed eco actions today (not forecasts). More completed actions lowers your “risk today”.
+                      This rating is based on real completed eco actions today (not forecasts).
                     </span>
                   </span>
                 </div>
@@ -411,24 +408,24 @@ File: index.html
         </div>
       </div>
 
-      <!-- PLANNER (SIMPLIFIED + RELIABLE) -->
+      <!-- PLANNER (SIMPLIFIED: TODAY + NEXT UP) -->
       <div id="plannerBox" class="panelSection" style="display:none;">
         <div class="grid2">
           <div class="miniCard">
             <h3 class="miniTitle">Action Planner</h3>
-            <p class="miniMuted">Paste tasks → we fill Today first, then put the rest in Next Up.</p>
+            <p class="miniMuted">Simple and reliable: fills Today first, then puts the rest in Next Up.</p>
 
             <label class="label">Tasks (one per line)</label>
             <textarea id="planTasks" rows="7" placeholder="Example:
-Bus to campus
+Bus to campus — Mon
 Study for quiz — Wed 60 min
-Work shift — 5–9pm
+Work shift — Thu 5–9pm
 Reusable bottle
 Meatless dinner"></textarea>
 
             <div class="ecoRow" style="margin-top:12px;">
               <div class="ecoField">
-                <label class="label">Time Available / day</label>
+                <label class="label">Time Available (today)</label>
                 <select id="planTime" class="ecoSelect">
                   <option value="60">1 hour</option>
                   <option value="90">1.5 hours</option>
@@ -443,7 +440,7 @@ Meatless dinner"></textarea>
                   <input type="checkbox" id="planEcoToHome" checked />
                   Count completed eco tasks toward Today’s Impact
                 </label>
-                <div class="fieldHelp">Simple toggle (per user).</div>
+                <div class="fieldHelp">This is a preference toggle (simple on/off).</div>
               </div>
             </div>
 
@@ -459,7 +456,7 @@ Meatless dinner"></textarea>
             </div>
 
             <p class="miniMuted" style="margin-top:10px;">
-              Tip: Add “Mon/Tue/Wed” or “60 min”. Eco keywords (bus, walk, recycle, meatless, bottle, lights) get 🌱 tags.
+              Tips: add “Mon / Tue / Wed” or “60 min”. Eco words like “bus”, “walk”, “recycle”, “meatless” become 🌱.
             </p>
             <div class="miniMuted" id="planStatus" aria-live="polite"></div>
           </div>
@@ -484,24 +481,15 @@ Meatless dinner"></textarea>
               </div>
             </div>
 
-            <div class="planSplit">
-              <div class="planColumn">
-                <h3 class="miniTitle">Today</h3>
-                <p class="miniMuted">Check items as you complete them.</p>
-                <div id="planTodayList" class="planList"></div>
-              </div>
-
-              <div class="sectionDivider"></div>
-
-              <div class="planColumn">
-                <h3 class="miniTitle">Next Up</h3>
-                <p class="miniMuted">Backlog items (don’t count until moved into Today by rebuilding).</p>
-                <div id="planNextList" class="planList"></div>
-              </div>
-            </div>
+            <div class="sectionDivider"></div>
+            <h3 class="miniTitle">Today</h3>
+            <div id="planTodayList" class="planList"></div>
 
             <div class="sectionDivider"></div>
+            <h3 class="miniTitle">Next Up</h3>
+            <div id="planNextList" class="planList"></div>
 
+            <div class="sectionDivider"></div>
             <h3 class="miniTitle">Today Focus</h3>
             <p class="miniMuted">Pick 1–2 items to finish today.</p>
             <ul id="planTodayFocus" class="listNice"></ul>
