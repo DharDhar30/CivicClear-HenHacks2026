@@ -23,7 +23,6 @@ function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// ===== Dates =====
 function ymdToday() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -136,7 +135,6 @@ const planMeta = document.getElementById("planMeta");
 const planSchedule = document.getElementById("planSchedule");
 const planToday = document.getElementById("planToday");
 
-// ===== State =====
 let currentTab = "guidance";
 
 const titles = {
@@ -156,7 +154,7 @@ const examples = {
     "Lab report — due Fri\nQuiz study — Wed\nWork shift — Thu 5–9pm\nGrocery run — 30 min"
 };
 
-// ===== Normal output helpers =====
+
 function setRisk(level) {
   riskBadge.textContent = level;
   riskBadge.classList.remove("low", "med", "high");
@@ -194,7 +192,7 @@ function renderNormalResult(result) {
   accessibleText.textContent = result.accessible || "";
 }
 
-// ===== Gemini Guidance (ONLY for guidance tab) =====
+
 async function generateGuidanceWithGemini(userText) {
   const prompt = `
 You are CivicClear, an AI civic assistant.
@@ -450,10 +448,7 @@ function refreshQuickButtons() {
 }
 
 function computeTodaySavedKg() {
-  // base quick actions savings (simple demo-friendly)
   const savings = { bus: 1.8, bottle: 0.1, veg: 1.2, lights: 0.3 };
-
-  // also add saved from Impact Simulator if user checked “Save to Home”
   const extra = loadJSON(userKey("impactSavedToday"), { date: ymdToday(), kg: 0 });
   let saved = (extra.date === ymdToday()) ? Number(extra.kg || 0) : 0;
 
@@ -560,13 +555,11 @@ document.addEventListener("click", (e) => {
   });
 });
 
-// ===== Tab switching =====
 function setActiveTab(tabName) {
   currentTab = tabName;
   tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
   panelTitle.textContent = titles[tabName] || "CivicClear";
 
-  // Show/hide sections
   if (homeDash) homeDash.style.display = (tabName === "guidance") ? "block" : "none";
 
   guidanceBox.style.display = (tabName === "guidance") ? "block" : "none";
@@ -575,10 +568,7 @@ function setActiveTab(tabName) {
   resourcesBox.style.display = (tabName === "resources") ? "block" : "none";
   plannerBox.style.display = (tabName === "planner") ? "block" : "none";
 
-  // Guidance output visible only on guidance tab
   normalOutput.style.display = (tabName === "guidance") ? "block" : "none";
-
-  // Shared action buttons only for Guidance + Eco
   const showShared = (tabName === "guidance" || tabName === "carbon");
   sharedActions.style.display = showShared ? "flex" : "none";
 
@@ -592,15 +582,12 @@ function setActiveTab(tabName) {
     renderEcoHistory();
   }
 
-  // Clear/refresh as needed
   if (tabName === "guidance") clearNormalOutput();
   if (tabName === "carbon") clearEcoOutput();
   if (tabName === "impact") renderImpactHistory();
   if (tabName === "resources") clearResourcesUI();
   if (tabName === "planner") renderPlannerFromSavedIfAny();
 }
-
-// ===== Guidance: shared buttons =====
 exampleBtn.addEventListener("click", () => {
   if (!userInput) return;
   userInput.value = examples[currentTab] || "";
@@ -652,7 +639,6 @@ copyBtn.addEventListener("click", () => {
     return;
   }
 
-  // guidance
   let text = "Risk: " + riskBadge.textContent + "\n\n";
   text += "Summary:\n" + summaryText.textContent + "\n\n";
 
@@ -667,9 +653,7 @@ copyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(text).then(() => alert("Copied!")).catch(() => alert("Copy failed."));
 });
 
-// ===== Impact Simulator =====
 function impactBase(action) {
-  // base weekly savings in kg CO2 and $ (rough but consistent)
   const map = {
     drive_less:     { kg: 6.0,  dollars: 6.5, note: "10–15 miles less/week" },
     transit_more:   { kg: 8.0,  dollars: 10,  note: "Replacing 1–2 car trips/week" },
@@ -690,10 +674,10 @@ function computeImpact(action, intensity, weeks) {
   const kg = Math.max(0, base.kg * mult * w);
   const dollars = Math.max(0, base.dollars * mult * w);
 
-  // fun equivalents
-  const phoneCharges = Math.round(kg * 80);       // ~80 phone charges per kg (demo)
-  const treeMonths = Math.max(1, Math.round(kg / 2)); // ~2kg per tree-month (demo)
-  const score = Math.min(100, Math.round(20 + kg * 3)); // simple score scale
+  // equivalents
+  const phoneCharges = Math.round(kg * 80);       
+  const treeMonths = Math.max(1, Math.round(kg / 2)); 
+  const score = Math.min(100, Math.round(20 + kg * 3)); 
 
   return {
     kg: Number(kg.toFixed(1)),
@@ -776,7 +760,7 @@ impactRunBtn.addEventListener("click", () => {
   });
   renderImpactHistory();
 
-  // optionally count toward home “Today’s Impact”
+  
   if (impactSaveToHome.checked) {
     const extra = loadJSON(userKey("impactSavedToday"), { date: ymdToday(), kg: 0 });
     const next = (extra.date === ymdToday()) ? Number(extra.kg || 0) + out.kg : out.kg;
@@ -789,7 +773,6 @@ impactClearBtn.addEventListener("click", () => {
   clearImpactUI();
 });
 
-// ===== Resources =====
 function clearResourcesUI() {
   resLinks.innerHTML = "";
   resChecklist.innerHTML = "";
@@ -988,14 +971,13 @@ function parseTasks(text) {
 }
 
 function buildPlan(tasks, daysCount, minutesPerDay) {
-  // Simple, reliable heuristic:
-  // 1) sort by due date soonest (within window), then priority, then longer tasks first
-  // 2) allocate into day buckets until daily minutes filled
+ 
   const now = new Date();
-  const startDow = now.getDay(); // 0..6
+  const startDow = now.getDay(); 
 
   function dueInDays(task) {
-    if (task.dueIndex == null) return 999;
+    if (task.dueIndex == null) 
+      return 999;
     let delta = task.dueIndex - startDow;
     if (delta < 0) delta += 7;
     return delta;
@@ -1107,8 +1089,7 @@ function renderPlanner(days, meta) {
         cb.checked = !!it.done;
 
         cb.addEventListener("change", () => {
-          it.done = cb.checked;
-          // persist
+          it.done = cb.checked
           const saved = loadPlanner();
           if (saved && saved.days) {
             saved.days[dayIdx].items = saved.days[dayIdx].items.map(x => x.id === it.id ? { ...x, done: it.done } : x);
@@ -1205,8 +1186,7 @@ planClearBtn.addEventListener("click", () => {
   planMeta.textContent = "No plan yet. Build one to start.";
 });
 
-// ===== Events =====
 tabs.forEach(tab => tab.addEventListener("click", () => setActiveTab(tab.dataset.tab)));
 
-// ===== Start =====
+
 setActiveTab("guidance");
