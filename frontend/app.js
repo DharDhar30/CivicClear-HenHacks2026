@@ -261,7 +261,7 @@ function loadPlannerSaved() {
   return loadJSON(userKey("plannerSaved"), null);
 }
 
-// Quick action savings: modest, believable
+
 function computeQuickActionSavings() {
   const savings = { bus: 0.6, bottle: 0.1, veg: 0.5, lights: 0.3 }; 
   let kg = 0;
@@ -345,16 +345,19 @@ refreshQuickButtons();
 updateImpactSnapshot();
 
 function resetToday() {
-  if (!confirm("Reset today’s completed actions? (Quick Actions + today's Planner checkmarks only)")) return;
+  if (!confirm("Reset today's completed actions? (Quick Actions + today's Planner checkmarks only)")) return;
 
   doneToday = { date: ymdToday(), actions: {} };
   saveJSON(userKey("doneToday"), doneToday);
 
-  const saved = loadPlannerSaved();
-  if (saved?.today?.length && saved.date === ymdToday()) {
-    saved.today = saved.today.map(it => ({ ...it, done: false }));
+  var saved = loadPlannerSaved();
+  if (saved && saved.today && saved.today.length && saved.date === ymdToday()) {
+    for (var i = 0; i < saved.today.length; i++) {
+      saved.today[i].done = false;
+    }
     saveJSON(userKey("plannerSaved"), saved);
   }
+}
 
   refreshQuickButtons();
   updateImpactSnapshot();
@@ -1037,17 +1040,23 @@ function renderResourceLinks() {
   if (!resLinks) return;
   resLinks.innerHTML = "";
 
-  const category = resCategory.value;
-  const loc = (resLocation.value || "").trim();
+  var category = resCategory.value;
+  var loc = (resLocation.value || "").trim();
 
-  const links = [...localShortcuts(category, loc), ...baseLinksForCategory(category)];
-  links.forEach(l => resLinks.appendChild(linkCard(l.title, l.url, l.tag)));
+  var links = localShortcuts(category, loc).concat(baseLinksForCategory(category));
 
-  resStatus.textContent = loc
-    ? "Showing trusted links + local map/search shortcuts."
-    : "Showing trusted links. Add city/state for local map links.";
+  for (var i = 0; i < links.length; i++) {
+    var l = links[i];
+    resLinks.appendChild(linkCard(l.title, l.url, l.tag));
+  }
 
-  saveJSON(userKey("resourcesPrefs"), { category, loc });
+  if (loc) {
+    resStatus.textContent = "Showing trusted links + local map/search shortcuts.";
+  } else {
+    resStatus.textContent = "Showing trusted links. Add city/state for local map links.";
+  }
+
+  saveJSON(userKey("resourcesPrefs"), { category: category, loc: loc });
 }
 
 function loadResourcesPrefsAndRender() {
