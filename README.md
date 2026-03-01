@@ -59,6 +59,4 @@ Tracks positive actions across all features. Every action taken through CivicCle
 
 ## Why We Made CivicClear
 
-We built CivicClear because students are often overwhelmed by information but lack clear direction. Important civic alerts go unread. Policies feel inaccessible. Environmental responsibility feels abstract. Support resources can be difficult to find.
-
-It turns information into understanding, and understanding into action. By combining civic clarity, environmental accountability, and structured resource access, CivicClear empowers students to make safer, smarter, and more responsible decisions.
+We built CivicClear because people are often overwhelmed by information but lack clear direction. Our website turns information into understanding, and understanding into action. By combining civic clarity, environmental accountability, and structured access, CivicClear empowers people to make safer, smarter, and more responsible decisions.
